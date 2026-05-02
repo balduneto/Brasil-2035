@@ -1,0 +1,490 @@
+import React, { useState } from 'react';
+import { 
+  TrendingUp, Server, Zap, Gem, Cpu, 
+  Globe, Activity, ChevronRight, ChevronDown, ChevronUp,
+  BarChart3, ShieldAlert, Lightbulb, ExternalLink,
+  BrainCircuit, Target, BookOpen
+} from 'lucide-react';
+
+// --- DADOS DO PAINEL ---
+const scenarioData = {
+  baseline: { gdp: 'US$ 2.9T', rank: 'Mantém atual', cagr: '3.2%' },
+  strategic: { gdp: 'US$ 3.8T', rank: '6º Lugar Global', cagr: '6.2%' },
+  investment: 'US$ 500B'
+};
+
+const pillars = [
+  {
+    id: 'dc',
+    title: 'Data Centers Verdes & IA',
+    intro: 'A inteligência artificial exige um volume colossal de energia e água para resfriamento de servidores. O Brasil possui as condições naturais exatas para abrigar a infraestrutura global da IA de forma limpa e barata.',
+    gdpShare: '6.5%',
+    icon: Server,
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-teal-600',
+    bgLight: 'bg-emerald-500/10',
+    borderLight: 'border-emerald-500/30',
+    borderSolid: 'border-emerald-500',
+    textLight: 'text-emerald-400',
+    current: '~1 GW instalado (198 DCs) · 12º ranking global',
+    projection: '13.7 GW de demanda · Potencial de US$ 2 Trilhões em investimentos',
+    evidences: [
+      'ByteDance (US$38B), AWS (US$1.8B) e Microsoft (US$2.7B) confirmados.',
+      'Redata: isenção fiscal para DCs 100% renováveis + 2% em P&D.',
+      'Scala AI City (RS): 4.75 GW, maior da América Latina.'
+    ],
+    risk: 'Não capturar P&D local; virar apenas uma "fazenda de servidores" sem soberania tecnológica.',
+    analysis: 'A atração de hyperscalers baseia-se em um tripé competitivo inegociável globalmente: energia limpa abundante, neutralidade geopolítica e vastos recursos hídricos. O Brasil tem uma janela histórica para se tornar o principal hub de inteligência artificial fora do eixo EUA-Ásia, desde que crie mecanismos de captura de valor intelectual e não apenas aluguel de infraestrutura.',
+    insights: [
+      'Alavancagem Regulatória: Usar o acesso à energia limpa como moeda de troca para forçar transferência de tecnologia e estabelecimento de centros de P&D locais.',
+      'Soberania de Dados: Criar "Zonas Econômicas Especiais de IA" para atrair talentos globais, garantindo retenção da propriedade intelectual gerada em solo nacional.'
+    ],
+    sources: [
+      'Redata (Dados de mercado e isenções tributárias)', 
+      'ABDC - Associação Brasileira de Data Centers', 
+      'Projeções de CAPEX de Big Techs (AWS, Microsoft, ByteDance)'
+    ]
+  },
+  {
+    id: 'energy',
+    title: 'Matriz Energética Limpa',
+    intro: 'Enquanto o mundo corre para reduzir emissões de carbono, indústrias inteiras estão migrando para onde a energia é barata e renovável. O Brasil se posiciona como um "porto seguro verde" para a manufatura global.',
+    gdpShare: '7.5%',
+    icon: Zap,
+    color: 'amber',
+    gradient: 'from-amber-400 to-orange-500',
+    bgLight: 'bg-amber-500/10',
+    borderLight: 'border-amber-500/30',
+    borderSolid: 'border-amber-500',
+    textLight: 'text-amber-400',
+    current: '88% elétrica renovável · 2ª potência solar emergente',
+    projection: 'Exportação em escala de H2 Verde, Eólico Offshore e BESS Industrial',
+    evidences: [
+      'Potencial de H2 verde: 12 GW de capacidade eletrolítica (IRENA).',
+      'Passaporte de Bateria da UE: cria reserva de mercado para "minério verde" do Brasil.',
+      'Nióbio: 94% das reservas mundiais (peça-chave para baterias).'
+    ],
+    risk: 'Grid overload (sobrecarga do sistema) devido aos Data Centers sem expansão de transmissão.',
+    analysis: 'O paradigma estratégico do país deve mudar de "exportador de commodities brutas" para "exportador de energia limpa embutida". A descarbonização global cria um prêmio verde incalculável para produtos processados aqui. Hoje, o principal gargalo de risco mudou da geração de energia para a transmissão e o armazenamento estrutural.',
+    insights: [
+      'Vantagem do Minério Verde: As regulações ESG europeias atuam como uma forte barreira de proteção natural que favorece a reindustrialização do Brasil.',
+      'H2V como "Bateria Global": O hidrogênio verde atua como uma tecnologia capaz de "encaixotar o sol do nordeste" para reequilibrar a balança comercial de energia.'
+    ],
+    sources: [
+      'IRENA (Agência Internacional de Energia Renovável)', 
+      'Diretrizes ESG e Passaporte de Bateria da União Europeia', 
+      'Estudos de Expansão da Matriz EPE (Empresa de Pesquisa Energética)'
+    ]
+  },
+  {
+    id: 'rare-earths',
+    title: 'Cadeia de Terras Raras',
+    intro: 'Carros elétricos e turbinas eólicas não funcionam sem ímãs de alta potência, feitos com minerais chamados "terras raras". O Brasil possui grandes reservas e pode quebrar o monopólio de exportação que hoje é dominado pela Ásia.',
+    gdpShare: '4.5%',
+    icon: Gem,
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-600',
+    bgLight: 'bg-rose-500/10',
+    borderLight: 'border-rose-500/30',
+    borderSolid: 'border-rose-500',
+    textLight: 'text-rose-400',
+    current: '20 t/ano produzidas · 0,1% do mercado global',
+    projection: '25% a 30% da produção global dominada pelo Brasil',
+    evidences: [
+      'Refinamento doméstico gera US$ 8-15k/t vs US$ 2-4k/t do produto bruto.',
+      'Efeito Multiplicador: US$ 1B investido gera US$ 2.5-3.5B em atividade.',
+      'Demanda por ímãs permanentes para EVs subirá +80% até 2030.'
+    ],
+    risk: 'Falta de refinarias de óxidos e ausência de joint ventures estratégicas.',
+    analysis: 'A extração mineral bruta captura apenas uma fração irrisória do valor de mercado. O salto de riqueza programado para 2035 exige que o país domine a complexa engenharia química de separação de óxidos e a manufatura final de ímãs permanentes, tornando-se a principal alternativa para quebrar o monopólio asiático.',
+    insights: [
+      'Multiplicador de Riqueza: A verticalização produtiva (ir da mina à fabricação do ímã) multiplica o impacto no PIB nacional em até 3,5 vezes.',
+      'Friendshoring Geopolítico: Oportunidade de usar os minerais críticos para forjar alianças tecnológicas profundas e irreversíveis com os EUA e a Europa.'
+    ],
+    sources: [
+      'Relatórios de Mercado de Terras Raras da Serra Verde', 
+      'Projeções Globais de Demanda por Ímãs (Mercado de VEs e Turbinas Eólicas)', 
+      'Estudos de Viabilidade Econômica de Refino Doméstico'
+    ]
+  },
+  {
+    id: 'tech',
+    title: 'Tecnologia & IA Digital',
+    intro: 'Com a infraestrutura de dados e a energia garantidas localmente, startups brasileiras nos setores de agricultura, finanças e saúde ganharão uma vantagem desleal para criar inteligências artificiais com alcance global.',
+    gdpShare: '8.5%',
+    icon: Cpu,
+    color: 'blue',
+    gradient: 'from-blue-500 to-indigo-600',
+    bgLight: 'bg-blue-500/10',
+    borderLight: 'border-blue-500/30',
+    borderSolid: 'border-blue-500',
+    textLight: 'text-blue-400',
+    current: 'Ecossistema em maturação',
+    projection: 'Maior fatia do PIB no Cenário Estratégico',
+    evidences: [
+      'Aceleração de AgriTechs e FinTechs impulsionadas por IA.',
+      'Redução de latência e custos computacionais com DCs locais.',
+      'Desenvolvimento de LLMs com dados soberanos regionais.'
+    ],
+    risk: 'Fuga de cérebros e dependência de algoritmos proprietários estrangeiros.',
+    analysis: 'A chegada em massa de infraestrutura computacional hiper-local (DCs) reduzirá o custo cognitivo e a latência da nuvem de forma drástica. Isso servirá como uma plataforma habilitadora para acelerar startups em setores onde o Brasil já domina (Agro, Finanças). O desafio é construir modelos de fundação de IA baseados em dados locais.',
+    insights: [
+      'IA Tropical e Setorial: Oportunidade global de criar e exportar a inteligência artificial definitiva voltada para o agronegócio, biotecnologia e clima tropical.',
+      'Defesa contra Tecno-Colonialismo: Desenvolver LLMs soberanos garante que o país não ficará eternamente refém de pagar royalties tecnológicos aos Estados Unidos.'
+    ],
+    sources: [
+      'McKinsey & Goldman Sachs (Projeções de impacto da IA Generativa no PIB)', 
+      'Mapeamento Anual do Ecossistema Nacional de Startups', 
+      'Análises de Infraestrutura e Redução de Custo de Nuvem Local'
+    ]
+  }
+];
+
+const implications = [
+  { level: '1ª Ordem', area: 'Geopolítica', desc: 'Brasil se torna "Fiador da Transição Energética Global" e porto seguro para IA, neutro em tensões EUA-China.' },
+  { level: '2ª Ordem', area: 'Econômica', desc: 'Reindustrialização Verde: o "Minério Verde" substitui a dependência de royalties do petróleo nas contas públicas.' },
+  { level: '3ª Ordem', area: 'Sócio-Tecnológica', desc: 'Risco de Tecno-Colonialismo se investimentos não focarem em talentos. Energia limpa alimentando IPs estrangeiras.' }
+];
+
+// --- COMPONENTE PRINCIPAL ---
+export default function App() {
+  const [expandedId, setExpandedId] = useState(pillars[0].id);
+  const [activeTab, setActiveTab] = useState('visao');
+
+  const toggleExpand = (id) => {
+    if (expandedId === id) {
+      setExpandedId(null); 
+    } else {
+      setExpandedId(id);
+      setActiveTab('visao'); 
+    }
+  };
+
+  return (
+    <div 
+      className="min-h-screen bg-slate-950 text-slate-300 selection:bg-emerald-500/30 font-sans"
+      style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}
+    >
+      {/* Header */}
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center justify-center md:justify-start gap-3">
+              <Activity className="text-emerald-500" size={32} />
+              Brasil <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-500">2035</span>
+            </h1>
+            <p className="text-slate-400 mt-1 font-medium tracking-wide text-sm md:text-base">Dashboard de Foresight Estratégico</p>
+          </div>
+          <div className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-full border border-slate-700 w-full md:w-auto justify-center">
+            <Globe className="text-blue-400" size={18} />
+            <span className="text-xs md:text-sm font-semibold text-slate-200">Visão: Superpotência Verde & Digital</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-12">
+        
+        {/* Seção 1: Cenários Macro */}
+        <section>
+          <div className="flex flex-col mb-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="text-slate-400" />
+              <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Cenários Macroeconômicos</h2>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed max-w-4xl">
+              <strong className="text-slate-300">O que é isso?</strong> Os cenários são mapas estratégicos que contrastam a inércia atual (o que acontece se o país não mudar sua matriz de investimentos) com um futuro de protagonismo ativo. Esta seção projeta o impacto financeiro dessas escolhas. <br/>
+              <span className="text-xs text-slate-500 mt-2 flex items-center gap-1"><BookOpen size={12} /> Fontes base: Projeções macroeconômicas do FMI (WEO), Goldman Sachs e McKinsey.</span>
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            {/* Baseline */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <TrendingUp size={80} />
+              </div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Cenário Inercial</p>
+              <h3 className="text-lg md:text-xl font-bold text-slate-300 mb-1">Baseline 2035</h3>
+              <p className="text-[10px] text-slate-500 mb-4 relative z-10 leading-tight pr-4">A projeção caso o país mantenha o ritmo atual, sem grandes estímulos ou mudanças estruturais nas cadeias de valor.</p>
+              <div className="space-y-3 relative z-10">
+                <div className="flex flex-col border-b border-slate-800 pb-2">
+                  <span className="text-slate-400 text-xs uppercase font-bold mb-1">PIB Projetado</span>
+                  <span className="text-2xl font-bold text-white">{scenarioData.baseline.gdp}</span>
+                </div>
+                <div className="flex justify-between items-end pb-1 relative group/tip">
+                  <span className="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help">Crescimento (CAGR)</span>
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block bg-slate-800 border border-slate-700 text-xs text-slate-300 p-2 rounded shadow-xl w-48 z-20">
+                    <strong>CAGR:</strong> Taxa de Crescimento Anual Composta. Representa a média constante de crescimento ano a ano.
+                  </div>
+                  <span className="text-md font-semibold text-slate-300">{scenarioData.baseline.cagr}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Strategic */}
+            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.05)]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -z-0"></div>
+              <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2 relative z-10 flex items-center gap-2">
+                <Zap size={14} /> Cenário Desejável
+              </p>
+              <h3 className="text-xl md:text-2xl font-extrabold text-white mb-1 relative z-10">Estratégico 2035</h3>
+              <p className="text-[10px] text-emerald-500/70 mb-4 relative z-10 leading-tight pr-4">A projeção com execução focada e massiva nos vetores de IA, transição energética e minerais críticos.</p>
+              <div className="space-y-3 relative z-10">
+                <div className="flex flex-col border-b border-slate-700 pb-2">
+                  <span className="text-slate-400 text-xs uppercase font-bold mb-1">PIB Projetado</span>
+                  <span className="text-3xl font-black text-emerald-400">{scenarioData.strategic.gdp}</span>
+                </div>
+                <div className="flex justify-between items-end pb-1 relative group/tip">
+                  <span className="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help">Posição Global</span>
+                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block bg-slate-800 border border-slate-700 text-xs text-slate-300 p-2 rounded shadow-xl w-52 z-20">
+                    Comparativo projetado do ranking de PIB nominal (em dólares) em relação às demais potências mundiais.
+                  </div>
+                  <span className="text-md font-bold text-white">{scenarioData.strategic.rank}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Accelerator */}
+            <div className="bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 md:p-6 flex flex-col justify-center items-center text-center relative group/tip">
+              <Lightbulb className="text-indigo-400 mb-2" size={28} />
+              <h3 className="text-sm md:text-base font-bold text-slate-300 mb-1 border-b border-dashed border-indigo-500/50 cursor-help">Acelerador Necessário</h3>
+              <div className="absolute top-2 hidden group-hover/tip:block bg-indigo-950 border border-indigo-500/50 text-xs text-slate-300 p-2 rounded shadow-xl w-11/12 z-20">
+                Capital total estimado para viabilizar a transição e a diferença entre os cenários.
+              </div>
+              <span className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 mb-2 mt-1">
+                {scenarioData.investment}
+              </span>
+              <p className="text-[11px] md:text-xs text-indigo-200/70 leading-relaxed mt-2 bg-indigo-950/30 p-2.5 rounded-lg border border-indigo-500/10">
+                Aporte estimado (2026-2035) direcionado a infraestrutura de dados, refino mineral, energia e formação de talentos especializados.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Seção 2: Vetores e Acordeão de Insights */}
+        <section>
+          <div className="flex flex-col mb-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <Activity className="text-slate-400" />
+              <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Vetores de Transformação</h2>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed max-w-4xl">
+              <strong className="text-slate-300">O que é isso?</strong> Os vetores representam as grandes "forças motrizes" (<i>driving forces</i>) setoriais que impulsionarão a economia na próxima década. Isolamos quatro macro-áreas onde o Brasil já possui uma forte vantagem competitiva latente e pode dominar as cadeias globais de valor. <br/>
+              <span className="text-xs text-slate-500 mt-2 flex items-center gap-1"><BookOpen size={12} /> Fontes base: Relatórios IRENA, Redata, ABDC, Serra Verde e dados de mercado de VEs e IA.</span>
+            </p>
+            
+            <div className="bg-slate-900/80 border border-slate-700/50 rounded-lg p-3 inline-flex items-center gap-3 w-fit mt-2 shadow-sm">
+              <div className="bg-blue-500/20 p-1.5 rounded-md">
+                <ChevronDown size={16} className="text-blue-400 animate-bounce"/>
+              </div>
+              <span className="text-xs md:text-sm font-medium text-slate-300"><strong>Guia Interativo:</strong> Toque nos cards abaixo para expandir e explorar os dados profundos e a leitura estratégica de cada vetor.</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start">
+            {pillars.map((pillar) => {
+              const Icon = pillar.icon;
+              const isExpanded = expandedId === pillar.id;
+
+              return (
+                <div 
+                  key={pillar.id}
+                  className={`flex flex-col bg-slate-900 rounded-2xl border transition-all duration-300 overflow-hidden
+                    ${isExpanded 
+                      ? `${pillar.borderSolid} shadow-[0_4px_30px_rgba(0,0,0,0.3)]` 
+                      : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                >
+                  <button
+                    onClick={() => toggleExpand(pillar.id)}
+                    className="w-full text-left p-5 md:p-6 flex flex-col group focus:outline-none relative"
+                  >
+                    {isExpanded && (
+                      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${pillar.gradient}`}></div>
+                    )}
+                    
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+                        <div className={`p-3 md:p-4 rounded-xl shrink-0 w-fit ${isExpanded ? pillar.bgLight : 'bg-slate-800/80 group-hover:bg-slate-800 transition-colors'}`}>
+                          <Icon className={isExpanded ? pillar.textLight : 'text-slate-400'} size={28} />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className="text-lg md:text-xl font-bold text-white mb-1 leading-tight">{pillar.title}</h3>
+                          <div className="flex items-center gap-2 mt-1 md:mt-0">
+                            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Impacto PIB 2035:</span>
+                            <span className={`text-sm font-black ${isExpanded ? pillar.textLight : 'text-slate-300'}`}>
+                              {pillar.gdpShare}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`ml-4 p-2 rounded-full border transition-colors shrink-0 ${isExpanded ? `bg-slate-950 ${pillar.borderLight}` : 'border-slate-700 bg-slate-800'}`}>
+                        {isExpanded ? (
+                          <ChevronUp className={pillar.textLight} size={20} />
+                        ) : (
+                          <ChevronDown className="text-slate-400" size={20} />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t border-slate-800 bg-slate-950/40 animate-in slide-in-from-top-2 duration-300 flex flex-col">
+                      <div className="p-4 bg-slate-900/50 border-b border-slate-800">
+                         <p className="text-sm text-slate-300 leading-relaxed italic border-l-2 pl-3 border-slate-700">
+                           {pillar.intro}
+                         </p>
+                      </div>
+
+                      <div className="flex border-b border-slate-800/80 bg-slate-950/80 sticky top-0 z-10">
+                        <button 
+                          onClick={() => setActiveTab('visao')}
+                          className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold uppercase tracking-wider transition-colors border-b-2 flex items-center justify-center gap-1.5 md:gap-2 ${activeTab === 'visao' ? `${pillar.borderSolid} text-white ${pillar.bgLight}` : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                        >
+                          <Activity size={16} /> <span className="hidden sm:inline">Visão Geral</span><span className="sm:hidden">Dados</span>
+                        </button>
+                        <button 
+                          onClick={() => setActiveTab('estrategia')}
+                          className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold uppercase tracking-wider transition-colors border-b-2 flex items-center justify-center gap-1.5 md:gap-2 ${activeTab === 'estrategia' ? `${pillar.borderSolid} text-white ${pillar.bgLight}` : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                        >
+                          <BrainCircuit size={16} /> <span className="hidden sm:inline">Análise & Insights</span><span className="sm:hidden">Análise</span>
+                        </button>
+                      </div>
+
+                      <div className="p-5 md:p-6 space-y-6">
+                        {activeTab === 'visao' ? (
+                          <div className="flex flex-col gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/50">
+                                <span className="block text-[10px] text-slate-500 font-bold uppercase mb-1">O Sinal Hoje</span>
+                                <p className="text-slate-300 text-sm font-medium">{pillar.current}</p>
+                              </div>
+                              <div className={`${pillar.bgLight} p-4 rounded-xl border ${pillar.borderLight}`}>
+                                <span className={`block text-[10px] ${pillar.textLight} font-bold uppercase mb-1`}>Projeção 2035</span>
+                                <p className="text-white text-sm font-bold leading-tight">{pillar.projection}</p>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <TrendingUp size={14} /> Evidências e Fatos
+                              </h4>
+                              <ul className="space-y-2">
+                                {pillar.evidences.map((ev, idx) => (
+                                  <li key={idx} className="flex items-start gap-2.5 text-slate-300 text-sm">
+                                    <ChevronRight className={`${pillar.textLight} shrink-0 mt-0.5`} size={16} />
+                                    <span className="leading-relaxed">{ev}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="bg-slate-950 rounded-xl p-4 md:p-5 border border-rose-900/30 flex flex-col sm:flex-row sm:items-start gap-4 mt-2">
+                              <div className="bg-rose-500/10 p-2.5 rounded-full w-fit shrink-0">
+                                <ShieldAlert className="text-rose-400" size={20} />
+                              </div>
+                              <div>
+                                <h4 className="text-rose-400 font-bold uppercase text-xs tracking-wider mb-1">Risco Crítico</h4>
+                                <p className="text-slate-300 text-sm leading-relaxed font-medium">
+                                  {pillar.risk}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-6">
+                            <div className="bg-slate-950 p-4 md:p-5 rounded-xl border border-slate-800/50">
+                              <h4 className={`text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2`}>
+                                <Activity size={14} /> Leitura de Cenário
+                              </h4>
+                              <p className="text-slate-300 leading-relaxed text-sm">
+                                {pillar.analysis}
+                              </p>
+                            </div>
+
+                            <div>
+                              <h4 className={`text-xs font-bold ${pillar.textLight} uppercase tracking-wider mb-3 flex items-center gap-2`}>
+                                <Target size={14} /> Direcionamentos de Valor
+                              </h4>
+                              <div className="flex flex-col gap-3">
+                                {pillar.insights.map((insight, idx) => (
+                                  <div key={idx} className={`${pillar.bgLight} p-4 rounded-xl border ${pillar.borderLight} flex items-start gap-3`}>
+                                    <Lightbulb className={`${pillar.textLight} shrink-0 mt-0.5`} size={18} />
+                                    <p className="text-slate-200 text-sm font-medium leading-relaxed">{insight}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="border-t border-slate-800 pt-4">
+                              <h4 className="text-slate-500 font-bold uppercase text-[10px] tracking-wider mb-2 flex items-center gap-1.5">
+                                <BookOpen size={12} /> Referências deste vetor
+                              </h4>
+                              <ul className="space-y-1.5">
+                                {pillar.sources.map((source, idx) => (
+                                  <li key={idx} className="flex items-start gap-2 text-slate-400 text-xs">
+                                    <div className={`mt-1.5 w-1 h-1 rounded-full bg-slate-600 shrink-0`}></div>
+                                    <span className="leading-relaxed">{source}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Seção 3: Roda das Implicações */}
+        <section>
+          <div className="flex flex-col mb-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <Globe className="text-slate-400" />
+              <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Roda das Implicações</h2>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed max-w-4xl">
+              <strong className="text-slate-300">O que é isso?</strong> Utilizando o framework de design de futuros conhecido como <i>Futures Wheel</i>, este bloco mapeia o efeito dominó das mudanças sistêmicas. Analisamos o que acontece a reboque do Cenário Estratégico, dividindo os impactos em consequências primárias (1ª ordem), secundárias (2ª ordem) e consequências estruturais que geram novos riscos (3ª ordem).<br/>
+              <span className="text-xs text-slate-500 mt-2 flex items-center gap-1"><BookOpen size={12} /> Fontes base: Exercício de Foresight Estratégico e cruzamento de tendências sociopolíticas.</span>
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {implications.map((imp, idx) => (
+              <div key={idx} className="bg-slate-900 border border-slate-800 rounded-xl p-5 md:p-6 relative group hover:border-slate-700 transition-colors flex flex-col">
+                <div className="absolute -top-3 -left-3 w-8 h-8 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center font-bold text-slate-400 text-xs md:text-sm">
+                  {idx + 1}
+                </div>
+                <span className="text-[10px] md:text-xs font-bold text-emerald-500 uppercase tracking-widest">{imp.level}</span>
+                <h3 className="text-base md:text-lg font-bold text-white mt-1 mb-2">{imp.area}</h3>
+                <p className="text-slate-400 text-xs md:text-sm leading-relaxed">
+                  {imp.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 bg-slate-950 mt-8 py-6 md:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-center md:text-left">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Fontes Gerais (Horizon Scanning)</span>
+            <p className="text-xs md:text-sm text-slate-500">IMF WEO 2026 · McKinsey · Goldman Sachs · Serra Verde · Redata · ABDC · IRENA</p>
+          </div>
+          <button className="flex items-center justify-center gap-2 text-xs md:text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-bold bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20 w-full md:w-auto">
+            <ExternalLink size={16} />
+            Metodologia Foresight
+          </button>
+        </div>
+      </footer>
+    </div>
+  );
+}
