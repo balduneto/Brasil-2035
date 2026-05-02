@@ -11,29 +11,39 @@
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Chart.js CDN (Para o Gráfico Radar) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
         
-        /* Animação suave para o acordeão */
         .slide-in {
-            animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             transform-origin: top;
         }
         
+        .fade-in {
+            animation: fadeIn 0.4s ease-in forwards;
+        }
+
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-5px); }
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Ajustes para os segmentos do gráfico */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .chart-bar-segment:hover {
             filter: brightness(1.2);
             z-index: 10;
         }
 
-        /* SISTEMA DE TOOLTIPS À PROVA DE FALHAS (Substitui o group-hover do Tailwind) */
+        /* SISTEMA DE TOOLTIPS */
         .tip-container {
             position: relative;
         }
@@ -42,42 +52,44 @@
             visibility: hidden;
             transform: translateY(5px);
             transition: all 0.2s ease-in-out;
-            pointer-events: none; /* Impede que o tooltip interfira com os cliques */
+            pointer-events: none;
             z-index: 100;
         }
-        /* Quando o mouse passa pelo container, mostra o conteúdo */
         .tip-container:hover > .tip-content {
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
             pointer-events: auto;
         }
+        
+        /* Ajuste do Canvas do Radar */
+        #steepleRadarChart {
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.1));
+        }
     </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-300 selection:bg-emerald-500/30">
     
-    <!-- Contentor Principal da Aplicação -->
     <div id="app-root"></div>
 
     <script>
-        // --- DADOS DO PAINEL ---
+        // --- DADOS DO PAINEL GERAL ---
         const scenarioData = {
             baseline: { gdp: 'US$ 2.9T', rank: 'Mantém atual', cagr: '3.2%' },
             strategic: { gdp: 'US$ 3.8T', rank: '6º Lugar Global', cagr: '6.2%' },
             investment: 'US$ 500B'
         };
 
-        // --- DADOS DO GRÁFICO COMPARATIVO GLOBAL ---
         const chartLegend = {
             'Agropecuária': 'bg-green-600',
             'Manufatura': 'bg-blue-500',
             'Construção': 'bg-teal-600',
             'Mineração': 'bg-sky-400',
             'Energia/Util.': 'bg-indigo-500',
-            'Tech/IA': 'bg-orange-500',
-            'Energia Verde': 'bg-emerald-500',
             'Terras Raras': 'bg-rose-500',
             'Data Centers IA': 'bg-teal-400',
+            'Tech/IA': 'bg-orange-500',
+            'Energia Verde': 'bg-emerald-500',
             'Serviços': 'bg-purple-500'
         };
 
@@ -88,74 +100,124 @@
 
         const globalChartData = [
             {
-                country: 'EUA', flag: '🇺🇸', gdp2025: 27.4, gdpBase: 37, gdpStrat: 37,
-                insight: 'Mantém a hegemonia global ancorada na transição para serviços de altíssimo valor e domínio absoluto do capital em Inteligência Artificial.',
-                data2025: [{n: 'Manufatura', v: 11}, {n: 'Tech/IA', v: 5}, {n: 'Serviços', v: 84}],
-                dataBase: [{n: 'Manufatura', v: 10.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 81}],
-                dataStrat: [{n: 'Manufatura', v: 10.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 81}]
+                country: 'EUA', flag: '🇺🇸', gdp2025: 27.4, gdpBase: 37, gdpStrat: 39.5,
+                insight: 'EUA lidera em data centers e tech; IRA acelera green energy. Rare earths: reshoring via Mountain Pass + aliados (Brasil, Canadá, Austrália).',
+                scenarioInsights: {
+                    s2025: 'Serviços dominam (72.4%). Capital começa a mover-se agressivamente para IA (5.5%) e transição verde.',
+                    sBase: 'Evolução orgânica focada em manter a hegemonia digital (Tech: 9%), estabilizando a manufatura local.',
+                    sStrat: 'O "Inflation Reduction Act" (IRA) injeta bilhões para reindustrializar. Salto em Green (6%), DCs (4%) e reshoring de Terras Raras (1.5%).'
+                },
+                data2025: [{n: 'Agropecuária', v: 1}, {n: 'Manufatura', v: 11}, {n: 'Construção', v: 4.5}, {n: 'Mineração', v: 1.2}, {n: 'Energia/Util.', v: 1.4}, {n: 'Terras Raras', v: 0.4}, {n: 'Data Centers IA', v: 0.6}, {n: 'Tech/IA', v: 5.5}, {n: 'Energia Verde', v: 2}, {n: 'Serviços', v: 72.4}],
+                dataBase: [{n: 'Agropecuária', v: 0.7}, {n: 'Manufatura', v: 10.5}, {n: 'Construção', v: 4.2}, {n: 'Mineração', v: 0.9}, {n: 'Energia/Util.', v: 0.8}, {n: 'Terras Raras', v: 0.8}, {n: 'Data Centers IA', v: 2.5}, {n: 'Tech/IA', v: 9}, {n: 'Energia Verde', v: 4.5}, {n: 'Serviços', v: 66.1}],
+                dataStrat: [{n: 'Agropecuária', v: 0.6}, {n: 'Manufatura', v: 10}, {n: 'Construção', v: 4}, {n: 'Mineração', v: 0.8}, {n: 'Energia/Util.', v: 0.5}, {n: 'Terras Raras', v: 1.5}, {n: 'Data Centers IA', v: 4}, {n: 'Tech/IA', v: 10.5}, {n: 'Energia Verde', v: 6}, {n: 'Serviços', v: 62.1}]
             },
             {
-                country: 'China', flag: '🇨🇳', gdp2025: 17.9, gdpBase: 26, gdpStrat: 26,
-                insight: 'Enfrenta o esgotamento do modelo focado em construção pesada, redirecionando o capital estatal massivamente para manufatura avançada e IA.',
-                data2025: [{n: 'Agropecuária', v: 7.1}, {n: 'Manufatura', v: 27}, {n: 'Construção', v: 6.8}, {n: 'Serviços', v: 59.1}],
-                dataBase: [{n: 'Agropecuária', v: 6}, {n: 'Manufatura', v: 26.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 59}],
-                dataStrat: [{n: 'Agropecuária', v: 6}, {n: 'Manufatura', v: 26.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 59}]
+                country: 'China', flag: '🇨🇳', gdp2025: 17.9, gdpBase: 26, gdpStrat: 28.5,
+                insight: 'China: dominância em terras raras (70% produção, 90% refino) e energia verde (60% adições globais). DC: Alibaba, Tencent, Huawei expandem agressivamente.',
+                scenarioInsights: {
+                    s2025: 'Base industrial massiva (22.5%) e setor de construção pesada com forte motor em energia verde já consolidado (10%).',
+                    sBase: 'Manutenção do peso na manufatura (21%) com expansão focada em consolidar a transição energética internamente.',
+                    sStrat: 'Domínio monopolista da cadeia sustentável global: explosão agressiva de Energia Verde (18%) e refino de Terras Raras (3%) exportáveis.'
+                },
+                data2025: [{n: 'Agropecuária', v: 7.1}, {n: 'Manufatura', v: 22.5}, {n: 'Construção', v: 6.8}, {n: 'Mineração', v: 1.5}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 1.5}, {n: 'Data Centers IA', v: 0.9}, {n: 'Tech/IA', v: 4.5}, {n: 'Energia Verde', v: 10}, {n: 'Serviços', v: 43.7}],
+                dataBase: [{n: 'Agropecuária', v: 5.5}, {n: 'Manufatura', v: 21}, {n: 'Construção', v: 4.5}, {n: 'Mineração', v: 1.2}, {n: 'Energia/Util.', v: 1}, {n: 'Terras Raras', v: 2}, {n: 'Data Centers IA', v: 2.5}, {n: 'Tech/IA', v: 7}, {n: 'Energia Verde', v: 15}, {n: 'Serviços', v: 40.3}],
+                dataStrat: [{n: 'Agropecuária', v: 4.5}, {n: 'Manufatura', v: 20}, {n: 'Construção', v: 4}, {n: 'Mineração', v: 1}, {n: 'Energia/Util.', v: 0.8}, {n: 'Terras Raras', v: 3}, {n: 'Data Centers IA', v: 4}, {n: 'Tech/IA', v: 8.5}, {n: 'Energia Verde', v: 18}, {n: 'Serviços', v: 36.2}]
             },
             {
-                country: 'Alemanha', flag: '🇩🇪', gdp2025: 4.46, gdpBase: 5.2, gdpStrat: 5.2,
-                insight: 'A robusta base industrial passa por uma metamorfose forçada, integrando Energia Verde de forma agressiva para mitigar a crise energética europeia.',
-                data2025: [{n: 'Manufatura', v: 19}, {n: 'Construção', v: 5}, {n: 'Serviços', v: 76}],
-                dataBase: [{n: 'Manufatura', v: 17.5}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 77}],
-                dataStrat: [{n: 'Manufatura', v: 17.5}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 77}]
+                country: 'Alemanha', flag: '🇩🇪', gdp2025: 4.46, gdpBase: 5.2, gdpStrat: 5.6,
+                insight: 'Alemanha: Frankfurt é o maior hub de DC da Europa. Energiewende mira 80% renováveis em 2030. Rare earths: dependência crítica; Critical Raw Materials Act EU como estratégia de mitigação.',
+                scenarioInsights: {
+                    s2025: 'O tradicional "Motor industrial da Europa" (19%), vulnerável aos custos de energia e ainda atrasado em adoção profunda de IA.',
+                    sBase: 'Crise de custos estruturais gera ligeira desindustrialização (17.5%), com lenta migração para energias limpas.',
+                    sStrat: 'Plano Energiewende blinda a indústria: forte injeção em Energia Verde (9.5%) e IA (7.5%) para evitar a fuga das suas grandes fábricas.'
+                },
+                data2025: [{n: 'Agropecuária', v: 0.8}, {n: 'Manufatura', v: 19}, {n: 'Construção', v: 5.8}, {n: 'Mineração', v: 0.3}, {n: 'Energia/Util.', v: 2.6}, {n: 'Terras Raras', v: 0.1}, {n: 'Data Centers IA', v: 0.3}, {n: 'Tech/IA', v: 3.5}, {n: 'Energia Verde', v: 4}, {n: 'Serviços', v: 63.6}],
+                dataBase: [{n: 'Agropecuária', v: 0.6}, {n: 'Manufatura', v: 17.5}, {n: 'Construção', v: 5}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 0.3}, {n: 'Data Centers IA', v: 1.5}, {n: 'Tech/IA', v: 6}, {n: 'Energia Verde', v: 7.5}, {n: 'Serviços', v: 59.9}],
+                dataStrat: [{n: 'Agropecuária', v: 0.5}, {n: 'Manufatura', v: 17}, {n: 'Construção', v: 4.8}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 1}, {n: 'Terras Raras', v: 0.8}, {n: 'Data Centers IA', v: 2.5}, {n: 'Tech/IA', v: 7.5}, {n: 'Energia Verde', v: 9.5}, {n: 'Serviços', v: 56.2}]
             },
             {
-                country: 'Japão', flag: '🇯🇵', gdp2025: 4.21, gdpBase: 4.8, gdpStrat: 4.8,
-                insight: 'Com uma população envelhecida, aposta numa hiper-automação transversal para sustentar a produtividade do seu vasto setor de serviços e manufatura.',
-                data2025: [{n: 'Manufatura', v: 20}, {n: 'Construção', v: 5.5}, {n: 'Serviços', v: 74.5}],
-                dataBase: [{n: 'Manufatura', v: 19}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 74.5}],
-                dataStrat: [{n: 'Manufatura', v: 19}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 74.5}]
+                country: 'Japão', flag: '🇯🇵', gdp2025: 4.21, gdpBase: 4.8, gdpStrat: 5.2,
+                insight: 'Japão: líder global em reciclagem de terras raras (urban mining). Green Transform (GX) injeta ¥150T (~$1T) em energia limpa até 2030. DC: NTT, SoftBank + TSMC fab local.',
+                scenarioInsights: {
+                    s2025: 'Economia madura e envelhecida suportada por Manufatura avançada (20%) e forte setor de Serviços.',
+                    sBase: 'Estagnação orgânica do PIB devido a questões demográficas, com avanço tímido em digitalização.',
+                    sStrat: 'Aposta radical em hiper-automação (Tech: 8%) e vanguarda tecnológica em reciclagem e mineração urbana (Terras Raras: 1%).'
+                },
+                data2025: [{n: 'Agropecuária', v: 1}, {n: 'Manufatura', v: 20}, {n: 'Construção', v: 5.8}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 3}, {n: 'Terras Raras', v: 0.3}, {n: 'Data Centers IA', v: 0.3}, {n: 'Tech/IA', v: 4.5}, {n: 'Energia Verde', v: 2.5}, {n: 'Serviços', v: 62.4}],
+                dataBase: [{n: 'Agropecuária', v: 0.8}, {n: 'Manufatura', v: 19}, {n: 'Construção', v: 5}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 2}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 1.5}, {n: 'Tech/IA', v: 7}, {n: 'Energia Verde', v: 5}, {n: 'Serviços', v: 59}],
+                dataStrat: [{n: 'Agropecuária', v: 0.7}, {n: 'Manufatura', v: 18.5}, {n: 'Construção', v: 4.8}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 1}, {n: 'Data Centers IA', v: 2.5}, {n: 'Tech/IA', v: 8}, {n: 'Energia Verde', v: 7}, {n: 'Serviços', v: 55.8}]
             },
             {
-                country: 'Índia', flag: '🇮🇳', gdp2025: 3.55, gdpBase: 7.5, gdpStrat: 7.5,
-                insight: 'Protagoniza o maior salto de crescimento, migrando o setor agrário para hubs de serviços digitais e capturando fábricas no rastro do "China Plus One".',
-                data2025: [{n: 'Agropecuária', v: 18.2}, {n: 'Manufatura', v: 13}, {n: 'Construção', v: 8.4}, {n: 'Serviços', v: 60.4}],
-                dataBase: [{n: 'Agropecuária', v: 13.5}, {n: 'Manufatura', v: 16.5}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 63.5}],
-                dataStrat: [{n: 'Agropecuária', v: 13.5}, {n: 'Manufatura', v: 16.5}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 63.5}]
+                country: 'Reino Unido', flag: '🇬🇧', gdp2025: 3.09, gdpBase: 3.8, gdpStrat: 4.1,
+                insight: 'Reino Unido: maior parque eólico offshore do mundo. London = hub global de fintech + DC. Rare earths: sem reservas domésticas; aposta em reciclagem e aliança com Austrália/Canadá.',
+                scenarioInsights: {
+                    s2025: 'Altíssima dependência de Serviços (71.4%), principalmente financeiros e consultoria sediados em Londres.',
+                    sBase: 'Crescimento apoiado essencialmente pela modernização natural de serviços com software e tecnologia.',
+                    sStrat: 'Pivot inovador Pós-Brexit: Acelera forte a sua posição em energia eólica offshore (8.5%) e consagra-se hub vital de IA/DCs no ocidente.'
+                },
+                data2025: [{n: 'Agropecuária', v: 0.7}, {n: 'Manufatura', v: 8.5}, {n: 'Construção', v: 6.2}, {n: 'Mineração', v: 0.8}, {n: 'Energia/Util.', v: 3.2}, {n: 'Terras Raras', v: 0.1}, {n: 'Data Centers IA', v: 0.6}, {n: 'Tech/IA', v: 5}, {n: 'Energia Verde', v: 3.5}, {n: 'Serviços', v: 71.4}],
+                dataBase: [{n: 'Agropecuária', v: 0.6}, {n: 'Manufatura', v: 8}, {n: 'Construção', v: 5.5}, {n: 'Mineração', v: 0.5}, {n: 'Energia/Util.', v: 1.8}, {n: 'Terras Raras', v: 0.3}, {n: 'Data Centers IA', v: 2}, {n: 'Tech/IA', v: 8.5}, {n: 'Energia Verde', v: 6.5}, {n: 'Serviços', v: 66.3}],
+                dataStrat: [{n: 'Agropecuária', v: 0.5}, {n: 'Manufatura', v: 7.5}, {n: 'Construção', v: 5.2}, {n: 'Mineração', v: 0.5}, {n: 'Energia/Util.', v: 1.2}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 3.5}, {n: 'Tech/IA', v: 10}, {n: 'Energia Verde', v: 8.5}, {n: 'Serviços', v: 62.6}]
             },
             {
-                country: 'Reino Unido', flag: '🇬🇧', gdp2025: 3.09, gdpBase: 3.8, gdpStrat: 3.8,
-                insight: 'Pós-Brexit, consolida-se como um porto seguro financeiro e um hub altamente especializado em governação, pesquisa e serviços de Inteligência Artificial.',
-                data2025: [{n: 'Manufatura', v: 8.5}, {n: 'Construção', v: 6}, {n: 'Serviços', v: 85.5}],
-                dataBase: [{n: 'Manufatura', v: 8}, {n: 'Tech/IA', v: 8}, {n: 'Serviços', v: 84}],
-                dataStrat: [{n: 'Manufatura', v: 8}, {n: 'Tech/IA', v: 8}, {n: 'Serviços', v: 84}]
+                country: 'Índia', flag: '🇮🇳', gdp2025: 3.55, gdpBase: 7.5, gdpStrat: 8.2,
+                insight: 'Índia: maior CAGR do G10 (~7%). Critical Minerals Mission (lithium, cobalt, ETR). DC: crescimento mais rápido globalmente. Green: 500 GW meta 2030. Rare earth: reservas = oportunidade estratégica.',
+                scenarioInsights: {
+                    s2025: 'Ainda com peso histórico gigantesco na agropecuária (18.2%) alinhado à exportação em massa de serviços de TI.',
+                    sBase: 'Rápida urbanização puxa a construção civil e migra força de trabalho para a manufatura tradicional.',
+                    sStrat: 'Efeito "China Plus One": Atrai parques de manufatura globais (17%), descarboniza a rede (8%) e reduz a proporção agrícola.'
+                },
+                data2025: [{n: 'Agropecuária', v: 18.2}, {n: 'Manufatura', v: 13}, {n: 'Construção', v: 8.4}, {n: 'Mineração', v: 2}, {n: 'Energia/Util.', v: 2.4}, {n: 'Terras Raras', v: 0.2}, {n: 'Data Centers IA', v: 0.3}, {n: 'Tech/IA', v: 3}, {n: 'Energia Verde', v: 2.5}, {n: 'Serviços', v: 50}],
+                dataBase: [{n: 'Agropecuária', v: 13.5}, {n: 'Manufatura', v: 16.5}, {n: 'Construção', v: 9.5}, {n: 'Mineração', v: 2}, {n: 'Energia/Util.', v: 2}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 1.5}, {n: 'Tech/IA', v: 5.5}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 44}],
+                dataStrat: [{n: 'Agropecuária', v: 11}, {n: 'Manufatura', v: 17}, {n: 'Construção', v: 9.5}, {n: 'Mineração', v: 2}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 1.5}, {n: 'Data Centers IA', v: 3}, {n: 'Tech/IA', v: 7}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 39.5}]
             },
             {
-                country: 'França', flag: '🇫🇷', gdp2025: 2.92, gdpBase: 3.5, gdpStrat: 3.5,
-                insight: 'Alavanca a matriz nuclear soberana e foca na energia verde para revitalizar a manufatura de alto valor, protegendo o seu dominante setor de serviços.',
-                data2025: [{n: 'Manufatura', v: 10}, {n: 'Energia/Util.', v: 5}, {n: 'Serviços', v: 85}],
-                dataBase: [{n: 'Manufatura', v: 9.5}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 82.5}],
-                dataStrat: [{n: 'Manufatura', v: 9.5}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 82.5}]
+                country: 'França', flag: '🇫🇷', gdp2025: 2.92, gdpBase: 3.5, gdpStrat: 3.8,
+                insight: 'França: nuclear renaissance (14 novos reatores EPR2) posiciona para energia limpa exportável. Orano processa ETR. Green hydrogen: projetos em Normandia e Marseille.',
+                scenarioInsights: {
+                    s2025: 'Matriz protetora e estatizada de serviços com vantagem em infraestrutura de utilidades operante.',
+                    sBase: 'Crescimento inercial seguro, mantendo a estabilidade socioeconômica da União Europeia sem grandes saltos.',
+                    sStrat: 'A "Renascença Nuclear" permite acolher DCs intensivos de IA (2.5%) com energia livre de emissões, expandindo IAs soberanas (Tech 8%).'
+                },
+                data2025: [{n: 'Agropecuária', v: 1.7}, {n: 'Manufatura', v: 10}, {n: 'Construção', v: 5.7}, {n: 'Mineração', v: 0.3}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 0.2}, {n: 'Data Centers IA', v: 0.3}, {n: 'Tech/IA', v: 3.5}, {n: 'Energia Verde', v: 3.5}, {n: 'Serviços', v: 73.3}],
+                dataBase: [{n: 'Agropecuária', v: 1.5}, {n: 'Manufatura', v: 9.5}, {n: 'Construção', v: 5}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 1}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 1.5}, {n: 'Tech/IA', v: 6.5}, {n: 'Energia Verde', v: 6}, {n: 'Serviços', v: 68.3}],
+                dataStrat: [{n: 'Agropecuária', v: 1.4}, {n: 'Manufatura', v: 9}, {n: 'Construção', v: 4.8}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 0.8}, {n: 'Terras Raras', v: 1}, {n: 'Data Centers IA', v: 2.5}, {n: 'Tech/IA', v: 8}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 64.3}]
             },
             {
-                country: 'Itália', flag: '🇮🇹', gdp2025: 2.25, gdpBase: 2.7, gdpStrat: 2.7,
-                insight: 'Investe em transição energética para aliviar o peso dos custos logísticos numa economia madura, mantendo o foco em manufatura de nicho e design premium.',
-                data2025: [{n: 'Manufatura', v: 15}, {n: 'Construção', v: 5}, {n: 'Serviços', v: 80}],
-                dataBase: [{n: 'Manufatura', v: 14.5}, {n: 'Energia Verde', v: 4.5}, {n: 'Serviços', v: 81}],
-                dataStrat: [{n: 'Manufatura', v: 14.5}, {n: 'Energia Verde', v: 4.5}, {n: 'Serviços', v: 81}]
+                country: 'Itália', flag: '🇮🇹', gdp2025: 2.25, gdpBase: 2.7, gdpStrat: 2.9,
+                insight: 'Itália: posição estratégica em cabos submarinos (hub Mediterrâneo). Solar do Sul: irradiação alta. PNRR injeta €235B. PMEs industriais adotam IA e automação acelerados.',
+                scenarioInsights: {
+                    s2025: 'Alto impacto da rede de PMEs e manufatura de design (15%), estrangulada por baixa eficiência tecnológica.',
+                    sBase: 'Risco de contração disfarçada pela injeção europeia, focado na modernização tardia da sua indústria.',
+                    sStrat: 'O PNRR europeu opera o resgate tecnológico: acelera Energia Verde no Sul e IA no Norte (6.5%), salvando as PMEs via automação profunda.'
+                },
+                data2025: [{n: 'Agropecuária', v: 2.1}, {n: 'Manufatura', v: 15}, {n: 'Construção', v: 5.2}, {n: 'Mineração', v: 0.3}, {n: 'Energia/Util.', v: 2.9}, {n: 'Terras Raras', v: 0.1}, {n: 'Data Centers IA', v: 0.2}, {n: 'Tech/IA', v: 3}, {n: 'Energia Verde', v: 2.5}, {n: 'Serviços', v: 68.7}],
+                dataBase: [{n: 'Agropecuária', v: 1.9}, {n: 'Manufatura', v: 14.5}, {n: 'Construção', v: 4.5}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 2}, {n: 'Terras Raras', v: 0.3}, {n: 'Data Centers IA', v: 1}, {n: 'Tech/IA', v: 5}, {n: 'Energia Verde', v: 5}, {n: 'Serviços', v: 65.6}],
+                dataStrat: [{n: 'Agropecuária', v: 1.8}, {n: 'Manufatura', v: 14}, {n: 'Construção', v: 4.3}, {n: 'Mineração', v: 0.2}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 0.6}, {n: 'Data Centers IA', v: 2}, {n: 'Tech/IA', v: 6.5}, {n: 'Energia Verde', v: 7}, {n: 'Serviços', v: 62.1}]
             },
             {
-                country: 'Canadá', flag: '🇨🇦', gdp2025: 2.14, gdpBase: 2.9, gdpStrat: 2.9,
-                insight: 'Atua como o parceiro geopolítico de proximidade dos EUA, modernizando a sua fortíssima base de mineração para fornecer minerais críticos limpos.',
-                data2025: [{n: 'Manufatura', v: 10}, {n: 'Mineração', v: 7.3}, {n: 'Serviços', v: 82.7}],
-                dataBase: [{n: 'Manufatura', v: 9.5}, {n: 'Mineração', v: 8}, {n: 'Serviços', v: 82.5}],
-                dataStrat: [{n: 'Manufatura', v: 9.5}, {n: 'Mineração', v: 8}, {n: 'Serviços', v: 82.5}]
+                country: 'Canadá', flag: '🇨🇦', gdp2025: 2.14, gdpBase: 2.9, gdpStrat: 3.2,
+                insight: 'Canadá: 14Mt de reservas de ETR + maior hub de IA acadêmica (Mila Institute Toronto/Montreal). Critical Minerals Strategy. Hidrogênio verde exportável para UE via porto de Halifax.',
+                scenarioInsights: {
+                    s2025: 'Atuação como cinturão protetor logístico e de extração mineral (5%) atrelado aos Estados Unidos.',
+                    sBase: 'Perda natural de eficiência na mineração convencional mitigada pelos fortes serviços internos.',
+                    sStrat: 'Transição agressiva para ser "O cofre verde". Exploração limpa de minerais críticos (TR: 2.5%) interligada aos pólos de IA (8.5%).'
+                },
+                data2025: [{n: 'Agropecuária', v: 1.8}, {n: 'Manufatura', v: 10}, {n: 'Construção', v: 7.3}, {n: 'Mineração', v: 5}, {n: 'Energia/Util.', v: 2.8}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 0.3}, {n: 'Tech/IA', v: 3.5}, {n: 'Energia Verde', v: 3.5}, {n: 'Serviços', v: 65.3}],
+                dataBase: [{n: 'Agropecuária', v: 1.6}, {n: 'Manufatura', v: 9.5}, {n: 'Construção', v: 6.5}, {n: 'Mineração', v: 4.5}, {n: 'Energia/Util.', v: 2.2}, {n: 'Terras Raras', v: 1}, {n: 'Data Centers IA', v: 1.5}, {n: 'Tech/IA', v: 7}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 60.7}],
+                dataStrat: [{n: 'Agropecuária', v: 1.4}, {n: 'Manufatura', v: 9}, {n: 'Construção', v: 6.2}, {n: 'Mineração', v: 4}, {n: 'Energia/Util.', v: 1.8}, {n: 'Terras Raras', v: 2.5}, {n: 'Data Centers IA', v: 3}, {n: 'Tech/IA', v: 8.5}, {n: 'Energia Verde', v: 7.5}, {n: 'Serviços', v: 56.1}]
             },
             {
                 country: 'Brasil ★', flag: '🇧🇷', gdp2025: 2.08, gdpBase: 2.9, gdpStrat: 3.8, isHighlight: true,
-                insight: 'A grande viragem: o país capitaliza os recursos muito além da exportação bruta. A reindustrialização baseada em IA e energia verde projeta o país para 6ª força.',
-                data2025: [{n: 'Agropecuária', v: 8.9}, {n: 'Manufatura', v: 10}, {n: 'Mineração', v: 4.5}, {n: 'Serviços', v: 76.6}],
-                dataBase: [{n: 'Agropecuária', v: 8.5}, {n: 'Manufatura', v: 10}, {n: 'Mineração', v: 5.5}, {n: 'Serviços', v: 76}],
-                dataStrat: [{n: 'Agropecuária', v: 7.5}, {n: 'Manufatura', v: 11.5}, {n: 'Terras Raras', v: 4.5}, {n: 'Data Centers IA', v: 6.5}, {n: 'Energia Verde', v: 7.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 54}]
+                insight: 'CENÁRIO ESTRATÉGICO: Brasil processa 25-30% das ETR mundiais (refino doméstico); lidera DC verdes na AL (13,7 GW); exporta H2 verde + nióbio para baterias. PIB: $2.08T → $3.8T (+83%).',
+                scenarioInsights: {
+                    s2025: 'Extrema dependência da exportação de commodities não beneficiadas (Agro e Mineração) ligadas a uma economia de serviços internos inflada.',
+                    sBase: 'Aprisionamento na "Armadilha de Rendimento Médio". O Agro continua como força motriz, mas as cadeias industriais estagnam.',
+                    sStrat: 'A Grande Reestruturação: Vetores limpos explodem. Terras Raras (4.5%), DCs (6.5%) e Tech nativa (8.5%) reduzem a fatia obsoleta e disparam a receita total (+83%).'
+                },
+                data2025: [{n: 'Agropecuária', v: 6.9}, {n: 'Manufatura', v: 10.5}, {n: 'Construção', v: 4.8}, {n: 'Mineração', v: 3.2}, {n: 'Energia/Util.', v: 2.2}, {n: 'Terras Raras', v: 0.1}, {n: 'Data Centers IA', v: 0.1}, {n: 'Tech/IA', v: 2.5}, {n: 'Energia Verde', v: 3.5}, {n: 'Serviços', v: 66.2}],
+                dataBase: [{n: 'Agropecuária', v: 7.5}, {n: 'Manufatura', v: 10}, {n: 'Construção', v: 5}, {n: 'Mineração', v: 3.5}, {n: 'Energia/Util.', v: 1.5}, {n: 'Terras Raras', v: 0.5}, {n: 'Data Centers IA', v: 1}, {n: 'Tech/IA', v: 5.5}, {n: 'Energia Verde', v: 6}, {n: 'Serviços', v: 59.5}],
+                dataStrat: [{n: 'Agropecuária', v: 6}, {n: 'Manufatura', v: 11.5}, {n: 'Construção', v: 5.5}, {n: 'Mineração', v: 1}, {n: 'Energia/Util.', v: 0.5}, {n: 'Terras Raras', v: 4.5}, {n: 'Data Centers IA', v: 6.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Energia Verde', v: 7.5}, {n: 'Serviços', v: 49}]
             }
         ];
 
@@ -167,6 +229,101 @@
                 }
             });
         });
+
+        // --- BASE DE DADOS STEEPLE EXCLUSIVA POR PAÍS ---
+        const steepleDataByCountry = {
+            'Brasil ★': {
+                S: { score: 8, title: 'Sociocultural', icon: 'users', text: 'A instabilidade no hemisfério norte atrai talentos. Grande oportunidade de fuga de cérebros globais para polos tecnológicos locais pacíficos.' },
+                T: { score: 6, title: 'Tecnológico', icon: 'cpu', text: 'Com a ciberguerra no norte, as Big Techs descentralizam infraestrutura. Nossos Data Centers viram "bunkers de dados" globais.' },
+                E: { score: 9, title: 'Econômico', icon: 'trending-up', text: 'O super-ciclo verde: o choque do petróleo dispara a demanda por H2V e etanol, acelerando a injeção do capital de transição.' },
+                A: { score: 8, title: 'Ambiental', icon: 'leaf', text: 'Fim da dependência fóssil global acelera a exploração sustentável dos nossos minerais críticos de forma agressiva.' },
+                P: { score: 9, title: 'Político', icon: 'scale', text: 'Friendshoring Ágil: Consolidamo-nos como a única democracia neutra gigante capaz de sustentar as cadeias do ocidente sem risco bélico.' },
+                L: { score: 7, title: 'Legal', icon: 'gavel', text: 'A crise global forçará o país a criar marcos regulatórios expressos (fast-track) para destravar exportação mineral vital.' },
+                Et: { score: 5, title: 'Ético', icon: 'eye', text: 'Dilema do duplo uso: A infraestrutura e os minerais daqui irão processar IA e drones militares em uso na guerra do norte.' }
+            },
+            'EUA': {
+                S: { score: 7, title: 'Sociocultural', icon: 'users', text: 'Forte mobilização nacional e polarização interna sobre o custo humano e financeiro de sustentar mais um conflito massivo direto.' },
+                T: { score: 10, title: 'Tecnológico', icon: 'cpu', text: 'Aceleração brutal do complexo industrial-tecnológico-militar (IA, drones autônomos e defesa cibernética contra infraestrutura iraniana/russa).' },
+                E: { score: 9, title: 'Econômico', icon: 'trending-up', text: 'Choque inflacionário global extremo devido ao fechamento do Estreito de Ormuz. O IRA (Inflation Reduction Act) ganha caráter de urgência bélica.' },
+                A: { score: 6, title: 'Ambiental', icon: 'leaf', text: 'Retrocesso temporário: Abertura emergencial de reservas de petróleo e fracking para mitigar a crise energética imediata no país.' },
+                P: { score: 10, title: 'Político', icon: 'scale', text: 'Teste de fogo da hegemonia americana. Necessidade de alinhar aliados globais rapidamente (friendshoring) e bloquear o eixo sino-russo-iraniano.' },
+                L: { score: 8, title: 'Legal', icon: 'gavel', text: 'Ativação do Defense Production Act para obrigar fábricas locais a priorizarem baterias, chips militares e armamentos autônomos.' },
+                Et: { score: 9, title: 'Ético', icon: 'eye', text: 'Pressão global incalculável sobre as Big Techs e o Pentágono quanto ao uso de IAs generativas sem controle humano em campos de batalha.' }
+            },
+            'China': {
+                S: { score: 4, title: 'Sociocultural', icon: 'users', text: 'Nacionalismo controlado; o foco social mantém-se na estabilidade interna enquanto o ocidente se desgasta.' },
+                T: { score: 8, title: 'Tecnológico', icon: 'cpu', text: 'Aproveita a distração militar dos EUA para consolidar o monopólio em chips no leste asiático e expandir sua ciberguerra indireta.' },
+                E: { score: 7, title: 'Econômico', icon: 'trending-up', text: 'Beneficia-se comprando petróleo sancionado (Irã/Rússia) com descontos massivos, ganhando vantagem competitiva na sua manufatura.' },
+                A: { score: 6, title: 'Ambiental', icon: 'leaf', text: 'Continua a liderar a instalação de painéis solares para garantir autonomia energética caso haja um bloqueio naval no Mar do Sul.' },
+                P: { score: 9, title: 'Político', icon: 'scale', text: 'O grande observador: Ganha tempo e espaço para expandir a iniciativa Belt and Road (Rota da Seda) no sul global sem a oposição dos EUA.' },
+                L: { score: 5, title: 'Legal', icon: 'gavel', text: 'Criação de ecossistemas legais financeiros alternativos (fuga do dólar e SWIFT) blindados contra sanções ocidentais.' },
+                Et: { score: 6, title: 'Ético', icon: 'eye', text: 'Fornecimento indireto de tecnologia e peças de reposição (chips, drones) para o eixo sancionado, ignorando embargos ocidentais.' }
+            },
+            'Alemanha': {
+                S: { score: 8, title: 'Sociocultural', icon: 'users', text: 'Nova onda de choque: medo de escassez e inverno sem aquecimento gera forte ansiedade pública e pressão sobre a coalizão governamental.' },
+                T: { score: 6, title: 'Tecnológico', icon: 'cpu', text: 'Vulnerabilidade cibernética exposta. Aceleração forçada de sistemas de defesa em plantas industriais pesadas.' },
+                E: { score: 9, title: 'Econômico', icon: 'trending-up', text: 'Terremoto industrial: Sem gás barato e com o petróleo nas alturas, as montadoras enfrentam paralisações e risco real de falência estrutural.' },
+                A: { score: 9, title: 'Ambiental', icon: 'leaf', text: 'A transição (Energiewende) deixa de ser pauta ambiental e vira a única política de sobrevivência de Estado. Boom da energia eólica.' },
+                P: { score: 8, title: 'Político', icon: 'scale', text: 'Tensão máxima na União Europeia. O país terá de bancar fundos de resgate e acelerar orçamentos de Defesa, quebrando tabus históricos.' },
+                L: { score: 7, title: 'Legal', icon: 'gavel', text: 'Intervenção estatal direta (nacionalizações temporárias) em gigantes de energia e logística para evitar o colapso sistêmico.' },
+                Et: { score: 5, title: 'Ético', icon: 'eye', text: 'Retorno emergencial à queima de carvão mineral de forma temporária, justificando poluição pelo "mal maior" do frio e desemprego.' }
+            },
+            'Japão': {
+                S: { score: 5, title: 'Sociocultural', icon: 'users', text: 'População habituada a crises ajusta-se via racionamento de energia extremo (Setsuden) sem grandes convulsões sociais.' },
+                T: { score: 7, title: 'Tecnológico', icon: 'cpu', text: 'Acelera a sua vanguarda global na transição do hidrogênio (GX) para tentar desacoplar a matriz térmica o mais rápido possível.' },
+                E: { score: 8, title: 'Econômico', icon: 'trending-up', text: 'Isolado como uma ilha sem recursos, o choque nos fretes marítimos (petróleo e GNL) pune severamente a margem de lucro de suas exportações.' },
+                A: { score: 8, title: 'Ambiental', icon: 'leaf', text: 'Aceleração máxima na religação segura dos reatores nucleares paralisados e adoção de baterias de escala industrial.' },
+                P: { score: 7, title: 'Político', icon: 'scale', text: 'Revisão forçada do Artigo 9 (Pacifismo). O Japão assume uma postura de defesa agressiva perante a ameaça sino-norte coreana vizinha.' },
+                L: { score: 5, title: 'Legal', icon: 'gavel', text: 'Regulamentações de Defesa de Dados ganham urgência perante a ameaça cibernética ligada aos aliados do Irã e Coreia do Norte.' },
+                Et: { score: 4, title: 'Ético', icon: 'eye', text: 'Debate interno intenso sobre a quebra definitiva do pacifismo e a remilitarização tecnológica ofensiva (IAs armadas).' }
+            },
+            'Reino Unido': {
+                S: { score: 6, title: 'Sociocultural', icon: 'users', text: 'Aumento da tensão social devido à inflação e possível nova onda de protestos contra o envolvimento militar direto.' },
+                T: { score: 8, title: 'Tecnológico', icon: 'cpu', text: 'Consolida-se como o "escudo cibernético" da Europa. Seus Data Centers e IA financeira em Londres tornam-se trincheiras digitais.' },
+                E: { score: 8, title: 'Econômico', icon: 'trending-up', text: 'Londres (Hub Financeiro) sofre com a volatilidade, mas ganha ao atrair o capital de risco que foge do conflito asiático e árabe.' },
+                A: { score: 7, title: 'Ambiental', icon: 'leaf', text: 'A dependência dos parques eólicos offshore do Mar do Norte garante uma "bolha de ar" contra a crise do petróleo de Ormuz.' },
+                P: { score: 9, title: 'Político', icon: 'scale', text: 'Atuação como principal aliado geopolítico militar e de inteligência dos Estados Unidos no Atlântico Norte e Oriente Médio.' },
+                L: { score: 7, title: 'Legal', icon: 'gavel', text: 'Leis de monitoramento e "Big Brother" urbano são aprovadas facilmente sob a justificativa de segurança nacional antiterrorismo.' },
+                Et: { score: 6, title: 'Ético', icon: 'eye', text: 'Escândalos de inteligência preditiva: até onde o Estado pode usar IA em dados civis para prever e neutralizar ameaças asiladas no país.' }
+            },
+            'Índia': {
+                S: { score: 6, title: 'Sociocultural', icon: 'users', text: 'Risco de fratura social devido ao choque violento nos preços dos combustíveis e alimentos, punindo a vasta base agrária do país.' },
+                T: { score: 7, title: 'Tecnológico', icon: 'cpu', text: 'Expansão dos serviços de TI indianos para preencher as lacunas deixadas por empresas de defesa ocidentais mobilizadas na guerra.' },
+                E: { score: 8, title: 'Econômico', icon: 'trending-up', text: 'Jogo duplo arriscado: Sofre com o frete, mas lucra imensamente refinando petróleo russo e iraniano "sancionado" e revendendo ao ocidente.' },
+                A: { score: 7, title: 'Ambiental', icon: 'leaf', text: 'O choque acelera a sua Missão de Minerais Críticos e o salto para painéis solares para mitigar apagões regionais profundos.' },
+                P: { score: 8, title: 'Político', icon: 'scale', text: 'Consagra a "Balança Neutra". Tornando-se a principal voz do Sul Global, mediando interesses sem romper nem com Washington, nem com Moscou.' },
+                L: { score: 6, title: 'Legal', icon: 'gavel', text: 'Alterações agressivas nos códigos de investimento para atrair empresas fugindo do eixo de guerra em direção a novos hubs (Nearshoring).' },
+                Et: { score: 5, title: 'Ético', icon: 'eye', text: 'Lucro sobre a guerra: críticas severas por operar como lavandaria de "commodities de sangue" enquanto o ocidente sangra.' }
+            },
+            'França': {
+                S: { score: 7, title: 'Sociocultural', icon: 'users', text: 'Cenário clássico de protestos massivos e greves (Coletes Amarelos) frente ao custo de vida inflacionado e impacto dos refugiados da guerra.' },
+                T: { score: 6, title: 'Tecnológico', icon: 'cpu', text: 'Foco na aceleração da sua IA soberana ("Mistral") para garantir que o exército francês não dependa da infraestrutura americana fragilizada.' },
+                E: { score: 7, title: 'Econômico', icon: 'trending-up', text: 'Ao contrário da Alemanha, a matriz energética francesa blinda parcialmente a sua manufatura pesada do choque de Ormuz.' },
+                A: { score: 8, title: 'Ambiental', icon: 'leaf', text: 'Vitória da "Renascença Nuclear". A França exporta energia para o resto da Europa em crise, validando a sua matriz frente à paralisação fóssil.' },
+                P: { score: 8, title: 'Político', icon: 'scale', text: 'Assume a liderança diplomática dura na União Europeia, promovendo um exército continental menos dependente da OTAN/EUA.' },
+                L: { score: 6, title: 'Legal', icon: 'gavel', text: 'Regulações protecionistas são ativadas na UE sob a tutela de Paris para impedir a aquisição de tecnologia europeia por capital estrangeiro hostil.' },
+                Et: { score: 6, title: 'Ético', icon: 'eye', text: 'Fornecimento de armamento de ponta. Debate sobre as regras de engajamento do seu arsenal no Oriente Médio e Norte de África.' }
+            },
+            'Itália': {
+                S: { score: 8, title: 'Sociocultural', icon: 'users', text: 'Crise aguda. O Mediterrâneo entra em fervura e a Itália vira a principal linha de frente e recepção de refugiados de guerra e asilo.' },
+                T: { score: 5, title: 'Tecnológico', icon: 'cpu', text: 'Adoção atrasada, as PMEs sofrem com ciberataques indiretos pela falta de malha de segurança corporativa robusta.' },
+                E: { score: 8, title: 'Econômico', icon: 'trending-up', text: 'O bloqueio do Canal de Suez/Mar Vermelho afunda os portos italianos. Fim da logística barata do oriente pune o design e a manufatura.' },
+                A: { score: 7, title: 'Ambiental', icon: 'leaf', text: 'O Sul italiano acelera a instalação de campos solares de forma quase caótica para suprir a paralisação do gás do norte da África.' },
+                P: { score: 7, title: 'Político', icon: 'scale', text: 'Tensão política interna grave face à migração e ao custo da energia, forçando o país a exigir resgates massivos de Bruxelas (UE).' },
+                L: { score: 6, title: 'Legal', icon: 'gavel', text: 'Leis de emergência focadas no controle de fronteiras navais e quotas de energia industrial rigorosas.' },
+                Et: { score: 5, title: 'Ético', icon: 'eye', text: 'O tratamento de refugiados navais gera colapso nos direitos humanos sob o peso de um Estado paralisado pela crise de recursos.' }
+            },
+            'Canadá': {
+                S: { score: 5, title: 'Sociocultural', icon: 'users', text: 'Acolhe fuga de cérebros de forma estruturada. Menos polarização política em relação aos vizinhos do sul.' },
+                T: { score: 7, title: 'Tecnológico', icon: 'cpu', text: 'A inteligência artificial do eixo Toronto/Montreal (Hub Mila) vira bunker cognitivo inatacável e de pesquisa militar para o Pentágono.' },
+                E: { score: 6, title: 'Econômico', icon: 'trending-up', text: 'Ganha absurdamente com o choque do petróleo e gás (é produtor gigante). A sua bolsa e mineração explodem de valor da noite para o dia.' },
+                A: { score: 7, title: 'Ambiental', icon: 'leaf', text: 'Dilema: o compromisso climático entra em pausa. O Canadá reativa extrações pesadas de areias betuminosas para salvar o suprimento americano.' },
+                P: { score: 8, title: 'Político', icon: 'scale', text: 'Posição blindada ("O Cofre do Norte"). Atua no limite do "friendshoring", integrando a sua mineração de Terras Raras à cadeia militar dos EUA.' },
+                L: { score: 6, title: 'Legal', icon: 'gavel', text: 'Mudanças no Critical Minerals Act para forçar a exclusão total do capital chinês ou árabe de suas grandes mineradoras nacionais.' },
+                Et: { score: 5, title: 'Ético', icon: 'eye', text: 'Devastação indígena e ambiental local "permitida" moralmente devido à exigência urgente de blindar o ocidente contra o colapso de minerais e energia.' }
+            }
+        };
+
 
         const pillars = [
             {
@@ -189,7 +346,7 @@
                     'Scala AI City (RS): 4.75 GW, maior da América Latina.'
                 ],
                 risk: 'Não capturar I&D local; virar apenas uma "quinta de servidores" sem soberania tecnológica.',
-                analysis: 'A atração de hyperscalers baseia-se num tripé competitivo inegociável globalmente: energia limpa abundante, neutralidade geopolítica e vastos recursos hídricos. O Brasil tem uma janela histórica para se tornar o principal hub de inteligência artificial fora do eixo EUA-Ásia, desde que crie mecanismos de captura de valor intelectual e não apenas aluguer de infraestrutura.',
+                analysis: 'A atração de hyperscalers baseia-se num tripé competitivo inegociável globalmente: energia limpa abundante, neutralidade geopolítica e vastos recursos hídricos. O Brasil tem uma janela histórica para se tornar o principal hub de inteligência artificial fora do eixo EUA-Ásia, desde que crie mechanisms de captura de valor intelectual e não apenas aluguer de infraestrutura.',
                 insights: [
                     'Alavancagem Regulatória: Usar o acesso à energia limpa como moeda de troca para forçar transferência de tecnologia e estabelecimento de centros de I&D locais.',
                     'Soberania de Dados: Criar "Zonas Económicas Especiais de IA" para atrair talentos globais, garantindo retenção da propriedade intelectual gerada em solo nacional.'
@@ -303,7 +460,9 @@
 
         let state = {
             expandedId: pillars[0].id,
-            activeTab: 'visao'
+            activeTab: 'visao',
+            selectedCountry: 'Brasil ★',
+            steepleCountry: 'Brasil ★' // Estado Exclusivo do Filtro de Estresse
         };
 
         function toggleExpand(id) {
@@ -321,7 +480,16 @@
             renderApp();
         }
 
-        // Função de renderização das barras do Gráfico com tooltips atualizados
+        window.setSelectedCountry = function(countryName) {
+            state.selectedCountry = countryName;
+            renderApp();
+        };
+
+        window.setSteepleCountry = function(countryName) {
+            state.steepleCountry = countryName;
+            renderApp();
+        };
+
         function renderChartBar(segments, totalGdp) {
             return segments.map(seg => {
                 const colorClass = chartLegend[seg.n] || 'bg-gray-500';
@@ -331,7 +499,6 @@
                     <div class="h-full ${colorClass} chart-bar-segment relative tip-container flex items-center justify-center transition-all duration-200 cursor-pointer first:rounded-l-full last:rounded-r-full" style="width: ${seg.v}%">
                         ${seg.v > 8 ? `<span class="text-[9px] md:text-[10px] font-bold text-white/90 truncate px-1 drop-shadow-md">${seg.v}%</span>` : ''}
                         
-                        <!-- Tooltip CSS customizado -->
                         <div class="tip-content flex flex-col items-center absolute bottom-full left-1/2 -translate-x-1/2 mb-2">
                             <div class="bg-slate-800 border border-slate-600 text-white text-xs rounded-lg py-1.5 px-3 shadow-xl whitespace-nowrap">
                                 <span class="font-bold flex items-center gap-1.5">
@@ -352,8 +519,236 @@
             }).join('');
         }
 
+        // Função vital para instanciar o Gráfico de Radar via Chart.js
+        function renderRadarChart() {
+            const ctx = document.getElementById('steepleRadarChart');
+            if(!ctx) return;
+
+            if(window.radarChart) {
+                window.radarChart.destroy();
+            }
+
+            const data = steepleDataByCountry[state.steepleCountry];
+            if(!data) return;
+
+            window.radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['SocioCultural', 'Tecnológico', 'Econômico', 'Ambiental', 'Político', 'Legal/Regulatório', 'Ético'],
+                    datasets: [{
+                        label: 'Nível de Impacto Sistêmico (0-10)',
+                        data: [data.S.score, data.T.score, data.E.score, data.A.score, data.P.score, data.L.score, data.Et.score],
+                        backgroundColor: 'rgba(16, 185, 129, 0.25)', // Emerald-500
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)', circular: true },
+                            pointLabels: {
+                                color: 'rgba(148, 163, 184, 1)', // slate-400
+                                font: { size: 11, family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif", weight: 'bold' }
+                            },
+                            ticks: {
+                                display: false, // Esconde os números (0, 2, 4) do eixo
+                                min: 0,
+                                max: 10,
+                                stepSize: 2
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)', // slate-900
+                            titleColor: '#fff',
+                            bodyColor: '#34d399', // emerald-400
+                            borderColor: 'rgba(51, 65, 85, 1)', // slate-700
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            titleFont: { size: 14 }
+                        }
+                    }
+                }
+            });
+        }
+
+
         function renderApp() {
             const appRoot = document.getElementById('app-root');
+
+            const countriesToRender = state.selectedCountry === 'Todos' 
+                ? globalChartData 
+                : globalChartData.filter(c => c.country === state.selectedCountry);
+            
+            let pibSectionHtml = '';
+            if (state.selectedCountry === 'Todos') {
+                pibSectionHtml = `
+                    <div class="flex flex-col gap-6 slide-in">
+                        <div class="hidden lg:grid grid-cols-[180px_1fr_1fr_1fr] gap-6 px-4 border-b border-slate-800 pb-3">
+                            <div></div>
+                            <div class="text-center text-xs font-bold text-slate-500 uppercase tracking-widest">2025<br/><span class="text-[10px] font-normal text-slate-600">Composição Atual</span></div>
+                            <div class="text-center text-xs font-bold text-blue-500 uppercase tracking-widest">2035 Baseline<br/><span class="text-[10px] font-normal text-blue-500/70">Inércia</span></div>
+                            <div class="text-center text-xs font-bold text-emerald-500 uppercase tracking-widest relative tip-container">
+                                <span class="border-b border-dashed border-emerald-500/50 cursor-help inline-flex items-center gap-1">
+                                    2035 Estratégico ★ <i data-lucide="info" class="w-3 h-3 text-emerald-500/80"></i>
+                                </span>
+                                <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-600 text-[10px] text-slate-200 p-2 rounded shadow-xl w-48 font-normal normal-case">
+                                    Composição projetada assumindo a injeção dos US$500B e execução total das políticas de industrialização verde.
+                                </div>
+                                <br/><span class="text-[10px] font-normal text-emerald-500/70">Novos Motores</span>
+                            </div>
+                        </div>
+
+                        ${globalChartData.map(country => `
+                            <div class="flex flex-col lg:grid lg:grid-cols-[180px_1fr_1fr_1fr] gap-4 lg:gap-6 items-center bg-slate-950 lg:bg-transparent p-4 lg:p-0 rounded-2xl border border-slate-800 lg:border-none ${country.isHighlight ? 'lg:bg-emerald-900/10 lg:p-4 lg:-mx-4 lg:border lg:border-emerald-500/30 lg:rounded-2xl lg:shadow-[0_0_30px_rgba(16,185,129,0.05)]' : ''} z-10 hover:z-20 transition-all duration-300">
+                                
+                                <div class="flex lg:flex-col items-center justify-between lg:justify-center lg:items-end w-full gap-2 border-b lg:border-b-0 border-slate-800 pb-3 lg:pb-0 pr-0 lg:pr-4">
+                                    <div class="flex items-center gap-2 relative tip-container">
+                                        <span class="text-xl">${country.flag}</span>
+                                        <span class="font-bold ${country.isHighlight ? 'text-emerald-400 text-lg' : 'text-slate-300'} border-b border-dashed border-slate-600 cursor-help transition-colors hover:text-white">${country.country}</span>
+                                        <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 mt-2 mb-2 bg-slate-800 border border-slate-600 text-[11px] text-slate-300 p-3 rounded-xl shadow-2xl w-64 normal-case font-normal text-left">
+                                            <strong class="text-white block mb-1.5 flex items-center gap-1.5 border-b border-slate-700 pb-1.5">
+                                                <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i> Macro-Cenário 2035
+                                            </strong>
+                                            ${country.insight}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex lg:flex-col items-center lg:items-end gap-3 lg:gap-1 text-xs font-mono font-medium mt-1 lg:mt-0">
+                                        <div class="relative tip-container inline-flex items-center gap-1 cursor-help">
+                                            <span class="text-slate-500 border-b border-dashed border-slate-600 pb-0.5 hover:text-slate-300 transition-colors">2025: <span class="text-slate-300">$${country.gdp2025}T</span></span>
+                                            <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 lg:left-auto lg:right-0 mt-2 mb-2 bg-slate-800 border border-slate-600 text-[10px] text-slate-300 p-2.5 rounded-lg shadow-xl w-56 normal-case font-sans z-50 text-left">
+                                                <strong class="text-white block mb-1 text-xs">Retrato Atual (2025)</strong>
+                                                ${country.scenarioInsights.s2025}
+                                            </div>
+                                        </div>
+                                        <div class="relative tip-container inline-flex items-center gap-1 cursor-help">
+                                            <span class="text-blue-500/80 border-b border-dashed border-blue-800/50 pb-0.5 hover:text-blue-400 transition-colors">Base: <span class="text-blue-400">$${country.gdpBase}T</span></span>
+                                            <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 lg:left-auto lg:right-0 mt-2 mb-2 bg-slate-800 border border-blue-900/50 text-[10px] text-slate-300 p-2.5 rounded-lg shadow-xl w-56 normal-case font-sans z-50 text-left">
+                                                <strong class="text-blue-400 block mb-1 text-xs">Cenário Baseline</strong>
+                                                ${country.scenarioInsights.sBase}
+                                            </div>
+                                        </div>
+                                        <div class="relative tip-container inline-flex items-center gap-1 cursor-help">
+                                            <span class="text-emerald-500/80 border-b border-dashed border-emerald-800/50 pb-0.5 hover:text-emerald-400 transition-colors">Est: <span class="${country.isHighlight ? 'text-emerald-400 font-bold' : 'text-emerald-400'}">$${country.gdpStrat}T</span></span>
+                                            <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 lg:left-auto lg:right-0 mt-2 mb-2 bg-slate-800 border border-emerald-900/50 text-[10px] text-slate-300 p-2.5 rounded-lg shadow-xl w-56 normal-case font-sans z-50 text-left">
+                                                <strong class="text-emerald-400 block mb-1 text-xs">Foco Estratégico</strong>
+                                                ${country.scenarioInsights.sStrat}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="w-full flex flex-col gap-1">
+                                    <span class="lg:hidden text-[10px] text-slate-500 font-bold uppercase mb-1 text-center">2025 Atual</span>
+                                    <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-slate-700/50 shadow-inner">
+                                        ${renderChartBar(country.data2025, country.gdp2025)}
+                                    </div>
+                                </div>
+                                
+                                <div class="w-full flex flex-col gap-1">
+                                    <span class="lg:hidden text-[10px] text-blue-500 font-bold uppercase mt-3 mb-1 text-center">2035 Baseline</span>
+                                    <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-blue-900/50 shadow-inner">
+                                        ${renderChartBar(country.dataBase, country.gdpBase)}
+                                    </div>
+                                </div>
+
+                                <div class="w-full flex flex-col gap-1 relative">
+                                    <span class="lg:hidden text-[10px] text-emerald-500 font-bold uppercase mt-3 mb-1 text-center">2035 Estratégico</span>
+                                    ${country.isHighlight ? '<div class="absolute -inset-1 bg-emerald-500/20 blur-md rounded-full -z-10 hidden lg:block"></div>' : ''}
+                                    <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border ${country.isHighlight ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-slate-700/50'} shadow-inner z-10">
+                                        ${renderChartBar(country.dataStrat, country.gdpStrat)}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                const c = globalChartData.find(x => x.country === state.selectedCountry);
+                pibSectionHtml = `
+                    <div class="bg-slate-900 border ${c.isHighlight ? 'border-emerald-500/50 shadow-[0_0_40px_rgba(16,185,129,0.1)]' : 'border-slate-700 shadow-xl'} rounded-3xl p-6 md:p-8 slide-in">
+                        
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-6">
+                            <div class="flex items-center gap-3">
+                                <span class="text-4xl md:text-5xl drop-shadow-md">${c.flag}</span>
+                                <h3 class="text-2xl md:text-4xl font-black text-white uppercase tracking-wider">${c.country}</h3>
+                            </div>
+                            <div class="flex gap-4 md:gap-6 text-sm font-mono bg-slate-950 p-3 md:p-4 rounded-2xl border border-slate-800 shadow-inner w-full md:w-auto">
+                                <div class="flex flex-col"><span class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">2025</span><span class="text-slate-300 font-bold text-lg md:text-xl">$${c.gdp2025}T</span></div>
+                                <div class="flex flex-col border-l border-slate-800 pl-4 md:pl-6"><span class="text-blue-500/80 text-[10px] uppercase font-bold tracking-widest">Base '35</span><span class="text-blue-400 font-bold text-lg md:text-xl">$${c.gdpBase}T</span></div>
+                                <div class="flex flex-col border-l border-slate-800 pl-4 md:pl-6"><span class="text-emerald-500/80 text-[10px] uppercase font-bold tracking-widest">Est '35</span><span class="text-emerald-400 font-bold text-lg md:text-xl">$${c.gdpStrat}T</span></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-8">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2"><i data-lucide="microscope" class="w-4 h-4 ${c.isHighlight ? 'text-emerald-400' : 'text-slate-400'}"></i> Foco Estratégico Central</h4>
+                            <p class="text-slate-300 leading-relaxed text-base md:text-lg bg-slate-950 p-5 md:p-6 rounded-2xl border border-slate-800/50">
+                                ${c.insight}
+                            </p>
+                        </div>
+
+                        <!-- Gráficos Isolados do País -->
+                        <div class="flex flex-col gap-6 mb-10 bg-slate-950/50 p-5 md:p-8 rounded-3xl border border-slate-800/80 shadow-inner">
+                            <div class="w-full flex flex-col gap-2">
+                                <div class="flex justify-between items-end"><span class="text-xs text-slate-500 font-bold uppercase tracking-wider">2025 Atual</span><span class="text-sm font-mono font-bold text-slate-400">$${c.gdp2025}T</span></div>
+                                <div class="w-full h-8 md:h-10 bg-slate-800 rounded-full flex border border-slate-700/50 shadow-inner">
+                                    ${renderChartBar(c.data2025, c.gdp2025)}
+                                </div>
+                            </div>
+                            <div class="w-full flex flex-col gap-2">
+                                <div class="flex justify-between items-end"><span class="text-xs text-blue-500 font-bold uppercase tracking-wider">2035 Baseline</span><span class="text-sm font-mono font-bold text-blue-400">$${c.gdpBase}T</span></div>
+                                <div class="w-full h-8 md:h-10 bg-slate-800 rounded-full flex border border-blue-900/50 shadow-inner">
+                                    ${renderChartBar(c.dataBase, c.gdpBase)}
+                                </div>
+                            </div>
+                            <div class="w-full flex flex-col gap-2 relative">
+                                <div class="flex justify-between items-end"><span class="text-xs text-emerald-500 font-bold uppercase tracking-wider">2035 Estratégico</span><span class="text-sm font-mono text-emerald-400 font-black drop-shadow-md">$${c.gdpStrat}T</span></div>
+                                ${c.isHighlight ? '<div class="absolute inset-x-0 bottom-0 h-8 md:h-10 bg-emerald-500/20 blur-xl rounded-full -z-10"></div>' : ''}
+                                <div class="w-full h-8 md:h-10 bg-slate-800 rounded-full flex border ${c.isHighlight ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'border-emerald-700/50'} shadow-inner z-10">
+                                    ${renderChartBar(c.dataStrat, c.gdpStrat)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cards de Análise Expandida -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 md:p-6 hover:border-slate-600 transition-colors">
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 border-b border-slate-800 pb-3 flex items-center gap-2">
+                                    <i data-lucide="camera" class="w-4 h-4"></i> Retrato Atual
+                                </div>
+                                <p class="text-sm md:text-base text-slate-300 leading-relaxed">${c.scenarioInsights.s2025}</p>
+                            </div>
+                            <div class="bg-slate-950/80 border border-blue-900/30 rounded-2xl p-5 md:p-6 hover:border-blue-700/50 transition-colors">
+                                <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-3 border-b border-blue-900/30 pb-3 flex items-center gap-2">
+                                    <i data-lucide="trending-up" class="w-4 h-4"></i> Cenário Baseline
+                                </div>
+                                <p class="text-sm md:text-base text-slate-300 leading-relaxed">${c.scenarioInsights.sBase}</p>
+                            </div>
+                            <div class="bg-emerald-950/20 border border-emerald-900/50 rounded-2xl p-5 md:p-6 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)] hover:border-emerald-500/50 transition-colors">
+                                <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-3 border-b border-emerald-900/50 pb-3 flex items-center gap-2">
+                                    <i data-lucide="star" class="w-4 h-4"></i> Estratégico ★
+                                </div>
+                                <p class="text-sm md:text-base text-slate-300 leading-relaxed">${c.scenarioInsights.sStrat}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Gerar lista dinâmica para o STEEPLE com base no país selecionado
+            const currentSteepleData = steepleDataByCountry[state.steepleCountry];
             
             let html = `
                 <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-2xl">
@@ -465,7 +860,7 @@
                         </div>
                     </section>
 
-                    <!-- NOVA SEÇÃO: KPIs ESTRATÉGICOS (O que muda com investimento ativo) -->
+                    <!-- SEÇÃO: KPIs ESTRATÉGICOS -->
                     <section class="mt-8 border-t border-slate-800/50 pt-10">
                         <div class="flex flex-col mb-6 space-y-3">
                             <div class="flex items-center gap-2">
@@ -480,40 +875,36 @@
                         <!-- Grid de KPIs -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
                             
-                            <!-- KPI 1 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">PIB Projetado</div>
                                 <div class="text-xl md:text-3xl font-black text-emerald-400">US$ 3.8T</div>
                                 <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">vs. US$ 2.9T no baseline <br/><span class="text-emerald-500/80">(+$0.9T)</span></div>
                                 <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-48 z-20">
                                     <strong class="text-emerald-400 block mb-1">Salto de Riqueza</strong>
-                                    Geração de US$ 900 mil milhões adicionais na economia, impulsionados pela mudança de matriz de exportação bruta para valor acrescentado local.
+                                    Geração de US$ 900 bilhões adicionais na economia, impulsionados pela mudança de matriz de exportação bruta para valor acrescentado local.
                                 </div>
                             </div>
 
-                            <!-- KPI 2 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">CAGR 2025–2035</div>
                                 <div class="text-xl md:text-3xl font-black text-emerald-400">~6.2%/ano</div>
                                 <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">vs. ~3.2% no baseline</div>
                                 <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-48 z-20">
                                     <strong class="text-emerald-400 block mb-1">Ritmo Asiático</strong>
-                                    Taxa de crescimento composto equivalente aos ciclos de boom económico asiático, sustentada por infraestrutura e dados.
+                                    Taxa de crescimento composto equivalente aos ciclos de boom econômico asiático, sustentada por infraestrutura e dados.
                                 </div>
                             </div>
 
-                            <!-- KPI 3 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-rose-500/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Terras Raras (% PIB)</div>
                                 <div class="text-xl md:text-3xl font-black text-rose-400">4.5%</div>
                                 <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">de 3.2% hoje (pré-sal) <br/>25-30% produção global</div>
                                 <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
                                     <strong class="text-rose-400 block mb-1">O Novo Pré-Sal</strong>
-                                    A substituição gradual da dependência do petróleo por minerais críticos, passando a dominar até 30% da produção global de ímanes essenciais.
+                                    A substituição gradual da dependência do petróleo por minerais críticos, passando a dominar até 30% da produção global de ímãs essenciais.
                                 </div>
                             </div>
 
-                            <!-- KPI 4 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-blue-400/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Data Centers IA</div>
                                 <div class="text-xl md:text-3xl font-black text-blue-400">6.5%</div>
@@ -524,18 +915,16 @@
                                 </div>
                             </div>
 
-                            <!-- KPI 5 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Energia Verde</div>
                                 <div class="text-xl md:text-3xl font-black text-emerald-500">7.5%</div>
                                 <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">H2 verde, solar NE, eólico offshore + BESS</div>
                                 <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
                                     <strong class="text-emerald-500 block mb-1">Exportação Limpa</strong>
-                                    O salto do hidrogénio verde (H2) e baterias industriais (BESS), tornando a matriz uma commodity exportável globalmente.
+                                    O salto do hidrogênio verde (H2) e baterias industriais (BESS), tornando a matriz uma commodity exportável globalmente.
                                 </div>
                             </div>
 
-                            <!-- KPI 6 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-orange-400/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Tech / IA (Digital)</div>
                                 <div class="text-xl md:text-3xl font-black text-orange-400">8.5%</div>
@@ -546,7 +935,6 @@
                                 </div>
                             </div>
 
-                            <!-- KPI 7 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-400/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Ranking Global PIB</div>
                                 <div class="text-xl md:text-3xl font-black text-emerald-400">6º lugar</div>
@@ -557,7 +945,6 @@
                                 </div>
                             </div>
 
-                            <!-- KPI 8 -->
                             <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-amber-400/50 transition-colors">
                                 <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Investimento Nesc.</div>
                                 <div class="text-xl md:text-3xl font-black text-amber-400">~US$ 500B</div>
@@ -578,90 +965,34 @@
                             <p class="text-sm text-slate-400 max-w-4xl mx-auto md:mx-0">
                                 O que acontece ao PIB brasileiro em comparação com as potências mundiais se o país ativar os vetores estratégicos? Os novos blocos de valor (<span class="text-emerald-400 font-medium">Energia Verde</span>, <span class="text-orange-400 font-medium">Tech/IA</span>, <span class="text-teal-400 font-medium">Data Centers</span> e <span class="text-rose-400 font-medium">Terras Raras</span>) redesenham a economia no Cenário Estratégico 2035.
                             </p>
-                            <span class="text-xs text-slate-400 mt-3 bg-slate-900/80 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit border border-slate-700 mx-auto md:mx-0 shadow-sm">
-                                <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-blue-400"></i> Passe o mouse sobre os países e as barras para ver análises interativas
-                            </span>
                         </div>
 
-                        <!-- Legenda Dinâmica -->
-                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 mb-8 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
-                            ${Object.entries(chartLegend).map(([name, colorClass]) => `
-                                <div class="flex items-center gap-1.5">
-                                    <div class="w-3 h-3 rounded-sm ${colorClass}"></div>
-                                    <span class="text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider">${name}</span>
+                        <!-- Filtro e Legenda -->
+                        <div class="flex flex-col gap-4 mb-8">
+                            <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-md">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="filter" class="w-5 h-5 text-emerald-400"></i>
+                                    <span class="font-bold text-white uppercase tracking-wider text-sm">Selecione um País para Análise:</span>
                                 </div>
-                            `).join('')}
-                        </div>
-
-                        <!-- Gráfico em Tabela/Grid -->
-                        <div class="flex flex-col gap-6">
-                            <!-- Cabeçalho (Só Visível em Desktop) -->
-                            <div class="hidden lg:grid grid-cols-[180px_1fr_1fr_1fr] gap-6 px-4 border-b border-slate-800 pb-3">
-                                <div></div>
-                                <div class="text-center text-xs font-bold text-slate-500 uppercase tracking-widest">2025<br/><span class="text-[10px] font-normal text-slate-600">Composição Atual</span></div>
-                                <div class="text-center text-xs font-bold text-blue-500 uppercase tracking-widest">2035 Baseline<br/><span class="text-[10px] font-normal text-blue-500/70">Inércia</span></div>
-                                <div class="text-center text-xs font-bold text-emerald-500 uppercase tracking-widest relative tip-container">
-                                    <span class="border-b border-dashed border-emerald-500/50 cursor-help inline-flex items-center gap-1">
-                                        2035 Estratégico ★ <i data-lucide="info" class="w-3 h-3 text-emerald-500/80"></i>
-                                    </span>
-                                    <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-600 text-[10px] text-slate-200 p-2 rounded shadow-xl w-48 font-normal normal-case">
-                                        Composição projetada assumindo a injeção dos US$500B e execução total das políticas de industrialização verde.
-                                    </div>
-                                    <br/><span class="text-[10px] font-normal text-emerald-500/70">Novos Motores</span>
-                                </div>
+                                <select onchange="window.setSelectedCountry(this.value)" class="bg-slate-950 border border-slate-600 text-slate-200 text-sm font-semibold rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full md:w-80 p-3 outline-none cursor-pointer hover:bg-slate-800 transition-colors shadow-inner">
+                                    <option value="Todos" ${state.selectedCountry === 'Todos' ? 'selected' : ''}>🌐 Todos os Países (Visão Geral)</option>
+                                    ${globalChartData.map(c => `<option value="${c.country}" ${state.selectedCountry === c.country ? 'selected' : ''}>${c.flag} ${c.country}</option>`).join('')}
+                                </select>
                             </div>
 
-                            <!-- Linhas de Países -->
-                            ${globalChartData.map(country => `
-                                <div class="flex flex-col lg:grid lg:grid-cols-[180px_1fr_1fr_1fr] gap-4 lg:gap-6 items-center bg-slate-950 lg:bg-transparent p-4 lg:p-0 rounded-2xl border border-slate-800 lg:border-none ${country.isHighlight ? 'lg:bg-emerald-900/10 lg:p-4 lg:-mx-4 lg:border lg:border-emerald-500/30 lg:rounded-2xl lg:shadow-[0_0_30px_rgba(16,185,129,0.05)]' : ''} z-10 hover:z-20">
-                                    
-                                    <!-- Info do País -->
-                                    <div class="flex lg:flex-col items-center justify-between lg:justify-center lg:items-end w-full gap-2 border-b lg:border-b-0 border-slate-800 pb-3 lg:pb-0 pr-0 lg:pr-4">
-                                        <div class="flex items-center gap-2 relative tip-container">
-                                            <span class="text-xl">${country.flag}</span>
-                                            <span class="font-bold ${country.isHighlight ? 'text-emerald-400 text-lg' : 'text-slate-300'} border-b border-dashed border-slate-600 cursor-help transition-colors hover:text-white">${country.country}</span>
-                                            
-                                            <!-- Tooltip Interativo do País -->
-                                            <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 mt-2 mb-2 bg-slate-800 border border-slate-600 text-[11px] text-slate-300 p-3 rounded-xl shadow-2xl w-64 normal-case font-normal text-left">
-                                                <strong class="text-white block mb-1.5 flex items-center gap-1.5 border-b border-slate-700 pb-1.5">
-                                                    <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i> Macro-Cenário 2035
-                                                </strong>
-                                                ${country.insight}
-                                            </div>
-                                        </div>
-                                        <div class="flex lg:flex-col items-center lg:items-end gap-3 lg:gap-1 text-xs font-mono font-medium mt-1 lg:mt-0">
-                                            <span class="text-slate-500">2025: <span class="text-slate-300">$${country.gdp2025}T</span></span>
-                                            <span class="text-blue-500/80">Base: <span class="text-blue-400">$${country.gdpBase}T</span></span>
-                                            <span class="text-emerald-500/80">Est: <span class="${country.isHighlight ? 'text-emerald-400 font-bold' : 'text-emerald-400'}">$${country.gdpStrat}T</span></span>
-                                        </div>
+                            <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
+                                ${Object.entries(chartLegend).map(([name, colorClass]) => `
+                                    <div class="flex items-center gap-1.5">
+                                        <div class="w-3 h-3 rounded-sm ${colorClass}"></div>
+                                        <span class="text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider">${name}</span>
                                     </div>
-
-                                    <!-- Barras (overflow removido) -->
-                                    <div class="w-full flex flex-col gap-1">
-                                        <span class="lg:hidden text-[10px] text-slate-500 font-bold uppercase mb-1 text-center">2025 Atual</span>
-                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-slate-700/50 shadow-inner">
-                                            ${renderChartBar(country.data2025, country.gdp2025)}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="w-full flex flex-col gap-1">
-                                        <span class="lg:hidden text-[10px] text-blue-500 font-bold uppercase mt-3 mb-1 text-center">2035 Baseline</span>
-                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-blue-900/50 shadow-inner">
-                                            ${renderChartBar(country.dataBase, country.gdpBase)}
-                                        </div>
-                                    </div>
-
-                                    <div class="w-full flex flex-col gap-1 relative">
-                                        <span class="lg:hidden text-[10px] text-emerald-500 font-bold uppercase mt-3 mb-1 text-center">2035 Estratégico</span>
-                                        ${country.isHighlight ? '<div class="absolute -inset-1 bg-emerald-500/20 blur-md rounded-full -z-10 hidden lg:block"></div>' : ''}
-                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border ${country.isHighlight ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-slate-700/50'} shadow-inner z-10">
-                                            ${renderChartBar(country.dataStrat, country.gdpStrat)}
-                                        </div>
-                                    </div>
-
-                                </div>
-                            `).join('')}
+                                `).join('')}
+                            </div>
                         </div>
+
+                        <!-- LÓGICA DE RENDERIZAÇÃO DO PIB -->
+                        ${pibSectionHtml}
+
                     </section>
 
                     <!-- Seção 3: Vetores e Acordeão de Insights -->
@@ -697,7 +1028,6 @@
                                                     <span class="text-[10px] text-slate-500 font-bold uppercase mb-1 border-b border-dashed border-slate-700 cursor-help flex items-center gap-1 w-fit">
                                                         O Sinal Hoje <i data-lucide="info" class="w-3 h-3"></i>
                                                     </span>
-                                                    <!-- Legenda Tooltip -->
                                                     <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52">
                                                         Indicador atual ou métrica-base (Baseline) que comprova a existência de um potencial latente neste setor no Brasil.
                                                     </div>
@@ -708,7 +1038,6 @@
                                                     <span class="text-[10px] ${pillar.textLight} font-bold uppercase mb-1 border-b border-dashed border-${pillar.color}-700/50 cursor-help flex items-center gap-1 w-fit">
                                                         Projeção 2035 <i data-lucide="info" class="w-3 h-3"></i>
                                                     </span>
-                                                    <!-- Legenda Tooltip -->
                                                     <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-56">
                                                         O estado futuro e quantificado almejado pelo Cenário Estratégico, projetando a captura total de valor.
                                                     </div>
@@ -738,7 +1067,6 @@
                                                     <h4 class="text-rose-400 font-bold uppercase text-xs tracking-wider mb-1 border-b border-dashed border-rose-800 cursor-help flex items-center gap-1 w-fit">
                                                         Risco Crítico <i data-lucide="info" class="w-3 h-3 text-rose-500"></i>
                                                     </h4>
-                                                    <!-- Legenda Tooltip -->
                                                     <div class="tip-content absolute bottom-full left-0 md:left-auto md:right-0 mb-2 bg-slate-800 border border-rose-900 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-64">
                                                         O que pode correr mal? O principal estrangulamento de mercado ou político que pode impedir a concretização desta projeção.
                                                     </div>
@@ -756,7 +1084,6 @@
                                                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 border-b border-dashed border-slate-600 cursor-help flex items-center gap-2 w-fit">
                                                     <i data-lucide="activity" class="w-3.5 h-3.5"></i> Leitura de Cenário <i data-lucide="info" class="w-3 h-3"></i>
                                                 </h4>
-                                                <!-- Legenda Tooltip -->
                                                 <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-64">
                                                     Interpretação e síntese qualitativa feita por especialistas em Foresight sobre os dados brutos.
                                                 </div>
@@ -813,7 +1140,6 @@
                                                             <span class="text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-dashed border-slate-600 cursor-help flex items-center gap-1 hover:text-slate-300 transition-colors">
                                                                 Impacto PIB 2035 <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
                                                             </span>
-                                                            <!-- Tooltip Legenda PIB -->
                                                             <div class="tip-content absolute top-full left-0 mt-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-56 normal-case font-normal">
                                                                 <strong class="text-white block mb-1">Percentagem da Riqueza Nacional</strong>
                                                                 Projeção da contribuição estimada (share) deste setor específico para o PIB do Brasil até 2035.
@@ -883,7 +1209,6 @@
                                         <span class="text-[10px] md:text-xs font-bold text-emerald-500 uppercase tracking-widest border-b border-dashed border-emerald-800/50 cursor-help flex items-center gap-1 hover:text-emerald-400 transition-colors">
                                             ${imp.level} <i data-lucide="info" class="w-3 h-3 text-emerald-600"></i>
                                         </span>
-                                        <!-- Legenda Tooltip da Ordem -->
                                         <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 normal-case font-normal">
                                             ${imp.level === '1ª Ordem' ? '<strong class="text-white block mb-1">Impacto Imediato</strong>Consequência direta e primária da execução do cenário estratégico.' : imp.level === '2ª Ordem' ? '<strong class="text-white block mb-1">Impacto Secundário</strong>O efeito dominó gerado pelas consequências de 1ª ordem.' : '<strong class="text-white block mb-1">Impacto Estrutural</strong>A mudança profunda (sociológica ou risco sistémico) revelada a longo prazo.'}
                                         </div>
@@ -896,27 +1221,127 @@
                             `).join('')}
                         </div>
                     </section>
+
+                    <!-- Seção 5: Foresight STEEPLE - Conflito EUA x Irã -->
+                    <section class="mt-8 border-t border-slate-800/50 pt-10 relative">
+                        <div class="absolute top-10 left-1/2 -translate-x-1/2 w-64 h-64 bg-red-500/10 blur-3xl rounded-full -z-10 pointer-events-none"></div>
+                        
+                        <div class="flex flex-col mb-8 text-center md:text-left relative z-10">
+                            <div class="flex items-center gap-2 justify-center md:justify-start mb-3">
+                                <i data-lucide="crosshair" class="text-red-500 w-6 h-6"></i>
+                                <h2 class="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Teste de Estresse: Guerra EUA x Irã</h2>
+                            </div>
+                            <p class="text-sm text-slate-400 leading-relaxed max-w-4xl mx-auto md:mx-0">
+                                <strong class="text-slate-300">Análise STEEPLE:</strong> Como a eclosão de um conflito direto, fechamento do Estreito de Ormuz e ciberguerra afetam a estratégia de cada país em 2035? 
+                            </p>
+                        </div>
+
+                        <!-- Filtro STEEPLE -->
+                        <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-900/80 p-4 rounded-xl border border-slate-700 shadow-md mb-8 z-10 relative backdrop-blur-sm">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="target" class="w-5 h-5 text-red-400"></i>
+                                <span class="font-bold text-white uppercase tracking-wider text-sm">País em Análise de Crise:</span>
+                            </div>
+                            <select onchange="window.setSteepleCountry(this.value)" class="bg-slate-950 border border-slate-600 text-slate-200 text-sm font-semibold rounded-lg focus:ring-red-500 focus:border-red-500 block w-full md:w-80 p-3 outline-none cursor-pointer hover:bg-slate-800 transition-colors shadow-inner">
+                                ${Object.keys(steepleDataByCountry).map(c => `<option value="${c}" ${state.steepleCountry === c ? 'selected' : ''}>${globalChartData.find(g=>g.country === c).flag} ${c}</option>`).join('')}
+                            </select>
+                        </div>
+                        
+                        <!-- Painel do Gráfico e Análises STEEPLE -->
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 z-10 relative">
+                            <!-- Coluna Esquerda: Gráfico de Radar -->
+                            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] flex flex-col items-center">
+                                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-dashed border-slate-700 w-full text-center pb-2">Proporção de Impacto (0-10)</h3>
+                                <div class="w-full h-80 relative">
+                                    <canvas id="steepleRadarChart"></canvas>
+                                </div>
+                                <div class="mt-4 text-[10px] text-slate-500 text-center px-4">
+                                    *Quanto mais próximo das bordas (10), mais severo ou transformador é o impacto naquela dimensão.
+                                </div>
+                            </div>
+
+                            <!-- Coluna Direita: Análises Detalhadas dos Eixos -->
+                            <div class="lg:col-span-3 flex flex-col gap-3">
+                                ${['S', 'T', 'E', 'A', 'P', 'L', 'Et'].map(key => {
+                                    const data = currentSteepleData[key];
+                                    return `
+                                        <div class="bg-slate-900/50 border border-slate-800 rounded-xl p-4 flex items-start gap-4 hover:border-emerald-500/30 transition-colors group">
+                                            <div class="w-10 h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700 group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 transition-all">
+                                                <i data-lucide="${data.icon}" class="w-5 h-5 text-slate-400 group-hover:text-emerald-400"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex justify-between items-center mb-1">
+                                                    <h4 class="text-sm font-bold text-white uppercase tracking-wider">${data.title}</h4>
+                                                    <span class="text-xs font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 shadow-sm">${data.score}/10</span>
+                                                </div>
+                                                <p class="text-xs md:text-sm text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                                                    ${data.text}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                    </section>
                 </main>
 
-                <!-- Footer -->
-                <footer class="border-t border-slate-800 bg-slate-950 mt-8 py-6 md:py-8">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="text-center md:text-left">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Fontes Gerais (Horizon Scanning)</span>
-                            <p class="text-xs md:text-sm text-slate-500">IMF WEO 2026 · McKinsey · Goldman Sachs · Serra Verde · Redata · ABDC · IRENA</p>
+                <!-- Footer com Autoria e Curadoria -->
+                <footer class="border-t border-slate-800 bg-slate-950 mt-8 py-8 md:py-12">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-8">
+                        <!-- Fontes e Botão -->
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 pb-8 border-b border-slate-800/50">
+                            <div class="text-center md:text-left">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Fontes Gerais (Horizon Scanning)</span>
+                                <p class="text-xs md:text-sm text-slate-500">IMF WEO 2026 · McKinsey · Goldman Sachs · Serra Verde · Redata · ABDC · IRENA</p>
+                            </div>
+                            <button class="flex items-center justify-center gap-2 text-xs md:text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-bold bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20 w-full md:w-auto">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                Metodologia Foresight
+                            </button>
                         </div>
-                        <button class="flex items-center justify-center gap-2 text-xs md:text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-bold bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20 w-full md:w-auto">
-                            <i data-lucide="external-link" class="w-4 h-4"></i>
-                            Metodologia Foresight
-                        </button>
+
+                        <!-- Autoria -->
+                        <div class="flex flex-col items-center md:items-start text-center md:text-left gap-4">
+                            <span class="text-[10px] md:text-xs font-bold text-emerald-500/80 uppercase tracking-widest flex items-center gap-2">
+                                <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i> Autoria & Curadoria Analítica
+                            </span>
+                            <div class="flex flex-col gap-3 w-full">
+                                <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 md:p-5 flex flex-col md:flex-row gap-4 items-center md:items-start">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                                        <i data-lucide="user" class="text-slate-400 w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-200">Marcus Branquinho</h4>
+                                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Executive Sales Leader RJ @ IBM | Automation, AI & Operational Efficiency | Oil & Gas, Utilities & Telecom</p>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-4 md:p-5 flex flex-col md:flex-row gap-4 items-center md:items-start">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                                        <i data-lucide="user" class="text-slate-400 w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-200">Antonio Balduino Neto</h4>
+                                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">Especialista em Foresight Estratégico e Design de Futuros - Diretoria de Educação e Tecnologia - SENAI Goiás</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500 font-mono mt-2 flex items-center gap-2">
+                                Análise estratégica · Modelagem de cenários · Maio 2026
+                            </div>
+                        </div>
                     </div>
                 </footer>
             `;
 
             appRoot.innerHTML = html;
             
-            // Re-renderiza os ícones do Lucide sempre que o DOM for atualizado
+            // Re-renderiza os ícones do Lucide
             lucide.createIcons();
+            
+            // Renderiza o gráfico de radar após injetar o HTML
+            renderRadarChart();
         }
 
         // Inicializar a aplicação
