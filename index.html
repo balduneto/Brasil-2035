@@ -390,7 +390,6 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <!-- Baseline -->
                             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 relative group">
-                                <!-- Wrapper do background para não cortar o tooltip -->
                                 <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
                                     <div class="absolute top-0 right-0 p-4 opacity-10">
                                         <i data-lucide="trending-up" class="w-20 h-20"></i>
@@ -452,7 +451,7 @@
                                 <h3 class="text-sm md:text-base font-bold text-slate-300 mb-1 border-b border-dashed border-indigo-500/50 cursor-help flex items-center gap-1.5 hover:text-white transition-colors">
                                     Acelerador Necessário <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
                                 </h3>
-                                <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-indigo-950 border border-indigo-500/50 text-xs text-slate-200 p-3 rounded-lg shadow-2xl w-64">
+                                <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-indigo-950 border border-indigo-500/50 text-xs text-slate-200 p-3 rounded-lg shadow-2xl w-64 z-20">
                                     <strong class="text-indigo-300 block mb-1">O Custo da Transformação</strong>
                                     Capital de investimento total exigido pelo mercado para fechar o gap (diferença) estrutural e viabilizar o cenário estratégico.
                                 </div>
@@ -463,6 +462,112 @@
                                     Aporte estimado (2026-2035) direcionado a infraestrutura de dados, refino mineral, energia e formação de talentos especializados.
                                 </p>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- NOVA SEÇÃO: KPIs ESTRATÉGICOS (O que muda com investimento ativo) -->
+                    <section class="mt-8 border-t border-slate-800/50 pt-10">
+                        <div class="flex flex-col mb-6 space-y-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="star" class="text-emerald-400 w-6 h-6"></i>
+                                <h2 class="text-xl md:text-2xl font-bold text-emerald-400 uppercase tracking-wider">Cenário Estratégico Brasil 2035</h2>
+                            </div>
+                            <p class="text-sm text-slate-400 leading-relaxed max-w-4xl">
+                                <strong class="text-slate-300">O que muda com investimento ativo?</strong> Desdobramentos diretos da injeção de capital e reestruturação produtiva, consolidando os números exatos que formam a superpotência verde projetada. Passe o mouse para detalhes.
+                            </p>
+                        </div>
+
+                        <!-- Grid de KPIs -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+                            
+                            <!-- KPI 1 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">PIB Projetado</div>
+                                <div class="text-xl md:text-3xl font-black text-emerald-400">US$ 3.8T</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">vs. US$ 2.9T no baseline <br/><span class="text-emerald-500/80">(+$0.9T)</span></div>
+                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-48 z-20">
+                                    <strong class="text-emerald-400 block mb-1">Salto de Riqueza</strong>
+                                    Geração de US$ 900 mil milhões adicionais na economia, impulsionados pela mudança de matriz de exportação bruta para valor acrescentado local.
+                                </div>
+                            </div>
+
+                            <!-- KPI 2 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">CAGR 2025–2035</div>
+                                <div class="text-xl md:text-3xl font-black text-emerald-400">~6.2%/ano</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">vs. ~3.2% no baseline</div>
+                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-48 z-20">
+                                    <strong class="text-emerald-400 block mb-1">Ritmo Asiático</strong>
+                                    Taxa de crescimento composto equivalente aos ciclos de boom económico asiático, sustentada por infraestrutura e dados.
+                                </div>
+                            </div>
+
+                            <!-- KPI 3 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-rose-500/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Terras Raras (% PIB)</div>
+                                <div class="text-xl md:text-3xl font-black text-rose-400">4.5%</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">de 3.2% hoje (pré-sal) <br/>25-30% produção global</div>
+                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
+                                    <strong class="text-rose-400 block mb-1">O Novo Pré-Sal</strong>
+                                    A substituição gradual da dependência do petróleo por minerais críticos, passando a dominar até 30% da produção global de ímanes essenciais.
+                                </div>
+                            </div>
+
+                            <!-- KPI 4 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-blue-400/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Data Centers IA</div>
+                                <div class="text-xl md:text-3xl font-black text-blue-400">6.5%</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">13.7 GW demanda até 2035 (ABDC) <br/>US$350B Redata</div>
+                                <div class="tip-content absolute bottom-full right-0 md:left-0 md:right-auto mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
+                                    <strong class="text-blue-400 block mb-1">Capital Intensivo</strong>
+                                    Representa a injeção colossal de capital direto (CAPEX) das Big Techs para acomodar uma demanda energética de 13.7 GW.
+                                </div>
+                            </div>
+
+                            <!-- KPI 5 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-500/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Energia Verde</div>
+                                <div class="text-xl md:text-3xl font-black text-emerald-500">7.5%</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">H2 verde, solar NE, eólico offshore + BESS</div>
+                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
+                                    <strong class="text-emerald-500 block mb-1">Exportação Limpa</strong>
+                                    O salto do hidrogénio verde (H2) e baterias industriais (BESS), tornando a matriz uma commodity exportável globalmente.
+                                </div>
+                            </div>
+
+                            <!-- KPI 6 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-orange-400/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Tech / IA (Digital)</div>
+                                <div class="text-xl md:text-3xl font-black text-orange-400">8.5%</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">AgriTech, fintech, software <br/>Acelerado por DC locais</div>
+                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
+                                    <strong class="text-orange-400 block mb-1">Latência Zero</strong>
+                                    O impacto indireto da infraestrutura: startups ganham agilidade e custos computacionais mínimos, liderando a fatia digital do PIB.
+                                </div>
+                            </div>
+
+                            <!-- KPI 7 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-emerald-400/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Ranking Global PIB</div>
+                                <div class="text-xl md:text-3xl font-black text-emerald-400">6º lugar</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">vs. 10º hoje <br/>supera Itália, Canadá, França</div>
+                                <div class="tip-content absolute bottom-full right-0 md:left-0 md:right-auto mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-48 z-20">
+                                    <strong class="text-emerald-400 block mb-1">Relevância Geopolítica</strong>
+                                    Recuperação de protagonismo no G20, assumindo a liderança do sul global ancorado na pauta verde.
+                                </div>
+                            </div>
+
+                            <!-- KPI 8 -->
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 relative tip-container hover:border-amber-400/50 transition-colors">
+                                <div class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Investimento Nesc.</div>
+                                <div class="text-xl md:text-3xl font-black text-amber-400">~US$ 500B</div>
+                                <div class="text-[10px] md:text-xs text-slate-400 mt-2 leading-tight">2026–2035 em infra, refino TR, energia e talentos</div>
+                                <div class="tip-content absolute bottom-full right-0 md:left-auto md:right-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 z-20">
+                                    <strong class="text-amber-400 block mb-1">Gap de Capital</strong>
+                                    Esforço público-privado imperativo para evitar o estrangulamento da transmissão energética e qualificar a força de trabalho.
+                                </div>
+                            </div>
+
                         </div>
                     </section>
 
