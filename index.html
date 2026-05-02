@@ -26,6 +26,32 @@
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Ajustes para os segmentos do gráfico */
+        .chart-bar-segment:hover {
+            filter: brightness(1.2);
+            z-index: 10;
+        }
+
+        /* SISTEMA DE TOOLTIPS À PROVA DE FALHAS (Substitui o group-hover do Tailwind) */
+        .tip-container {
+            position: relative;
+        }
+        .tip-content {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(5px);
+            transition: all 0.2s ease-in-out;
+            pointer-events: none; /* Impede que o tooltip interfira com os cliques */
+            z-index: 100;
+        }
+        /* Quando o mouse passa pelo container, mostra o conteúdo */
+        .tip-container:hover > .tip-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-300 selection:bg-emerald-500/30">
@@ -40,6 +66,107 @@
             strategic: { gdp: 'US$ 3.8T', rank: '6º Lugar Global', cagr: '6.2%' },
             investment: 'US$ 500B'
         };
+
+        // --- DADOS DO GRÁFICO COMPARATIVO GLOBAL ---
+        const chartLegend = {
+            'Agropecuária': 'bg-green-600',
+            'Manufatura': 'bg-blue-500',
+            'Construção': 'bg-teal-600',
+            'Mineração': 'bg-sky-400',
+            'Energia/Util.': 'bg-indigo-500',
+            'Tech/IA': 'bg-orange-500',
+            'Energia Verde': 'bg-emerald-500',
+            'Terras Raras': 'bg-rose-500',
+            'Data Centers IA': 'bg-teal-400',
+            'Serviços': 'bg-purple-500'
+        };
+
+        const calcRest = (segments) => {
+            const sum = segments.reduce((acc, seg) => acc + seg.v, 0);
+            return Math.max(0, 100 - sum);
+        };
+
+        const globalChartData = [
+            {
+                country: 'EUA', flag: '🇺🇸', gdp2025: 27.4, gdpBase: 37, gdpStrat: 37,
+                insight: 'Mantém a hegemonia global ancorada na transição para serviços de altíssimo valor e domínio absoluto do capital em Inteligência Artificial.',
+                data2025: [{n: 'Manufatura', v: 11}, {n: 'Tech/IA', v: 5}, {n: 'Serviços', v: 84}],
+                dataBase: [{n: 'Manufatura', v: 10.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 81}],
+                dataStrat: [{n: 'Manufatura', v: 10.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 81}]
+            },
+            {
+                country: 'China', flag: '🇨🇳', gdp2025: 17.9, gdpBase: 26, gdpStrat: 26,
+                insight: 'Enfrenta o esgotamento do modelo focado em construção pesada, redirecionando o capital estatal massivamente para manufatura avançada e IA.',
+                data2025: [{n: 'Agropecuária', v: 7.1}, {n: 'Manufatura', v: 27}, {n: 'Construção', v: 6.8}, {n: 'Serviços', v: 59.1}],
+                dataBase: [{n: 'Agropecuária', v: 6}, {n: 'Manufatura', v: 26.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 59}],
+                dataStrat: [{n: 'Agropecuária', v: 6}, {n: 'Manufatura', v: 26.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 59}]
+            },
+            {
+                country: 'Alemanha', flag: '🇩🇪', gdp2025: 4.46, gdpBase: 5.2, gdpStrat: 5.2,
+                insight: 'A robusta base industrial passa por uma metamorfose forçada, integrando Energia Verde de forma agressiva para mitigar a crise energética europeia.',
+                data2025: [{n: 'Manufatura', v: 19}, {n: 'Construção', v: 5}, {n: 'Serviços', v: 76}],
+                dataBase: [{n: 'Manufatura', v: 17.5}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 77}],
+                dataStrat: [{n: 'Manufatura', v: 17.5}, {n: 'Energia Verde', v: 5.5}, {n: 'Serviços', v: 77}]
+            },
+            {
+                country: 'Japão', flag: '🇯🇵', gdp2025: 4.21, gdpBase: 4.8, gdpStrat: 4.8,
+                insight: 'Com uma população envelhecida, aposta numa hiper-automação transversal para sustentar a produtividade do seu vasto setor de serviços e manufatura.',
+                data2025: [{n: 'Manufatura', v: 20}, {n: 'Construção', v: 5.5}, {n: 'Serviços', v: 74.5}],
+                dataBase: [{n: 'Manufatura', v: 19}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 74.5}],
+                dataStrat: [{n: 'Manufatura', v: 19}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 74.5}]
+            },
+            {
+                country: 'Índia', flag: '🇮🇳', gdp2025: 3.55, gdpBase: 7.5, gdpStrat: 7.5,
+                insight: 'Protagoniza o maior salto de crescimento, migrando o setor agrário para hubs de serviços digitais e capturando fábricas no rastro do "China Plus One".',
+                data2025: [{n: 'Agropecuária', v: 18.2}, {n: 'Manufatura', v: 13}, {n: 'Construção', v: 8.4}, {n: 'Serviços', v: 60.4}],
+                dataBase: [{n: 'Agropecuária', v: 13.5}, {n: 'Manufatura', v: 16.5}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 63.5}],
+                dataStrat: [{n: 'Agropecuária', v: 13.5}, {n: 'Manufatura', v: 16.5}, {n: 'Tech/IA', v: 6.5}, {n: 'Serviços', v: 63.5}]
+            },
+            {
+                country: 'Reino Unido', flag: '🇬🇧', gdp2025: 3.09, gdpBase: 3.8, gdpStrat: 3.8,
+                insight: 'Pós-Brexit, consolida-se como um porto seguro financeiro e um hub altamente especializado em governação, pesquisa e serviços de Inteligência Artificial.',
+                data2025: [{n: 'Manufatura', v: 8.5}, {n: 'Construção', v: 6}, {n: 'Serviços', v: 85.5}],
+                dataBase: [{n: 'Manufatura', v: 8}, {n: 'Tech/IA', v: 8}, {n: 'Serviços', v: 84}],
+                dataStrat: [{n: 'Manufatura', v: 8}, {n: 'Tech/IA', v: 8}, {n: 'Serviços', v: 84}]
+            },
+            {
+                country: 'França', flag: '🇫🇷', gdp2025: 2.92, gdpBase: 3.5, gdpStrat: 3.5,
+                insight: 'Alavanca a matriz nuclear soberana e foca na energia verde para revitalizar a manufatura de alto valor, protegendo o seu dominante setor de serviços.',
+                data2025: [{n: 'Manufatura', v: 10}, {n: 'Energia/Util.', v: 5}, {n: 'Serviços', v: 85}],
+                dataBase: [{n: 'Manufatura', v: 9.5}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 82.5}],
+                dataStrat: [{n: 'Manufatura', v: 9.5}, {n: 'Energia Verde', v: 8}, {n: 'Serviços', v: 82.5}]
+            },
+            {
+                country: 'Itália', flag: '🇮🇹', gdp2025: 2.25, gdpBase: 2.7, gdpStrat: 2.7,
+                insight: 'Investe em transição energética para aliviar o peso dos custos logísticos numa economia madura, mantendo o foco em manufatura de nicho e design premium.',
+                data2025: [{n: 'Manufatura', v: 15}, {n: 'Construção', v: 5}, {n: 'Serviços', v: 80}],
+                dataBase: [{n: 'Manufatura', v: 14.5}, {n: 'Energia Verde', v: 4.5}, {n: 'Serviços', v: 81}],
+                dataStrat: [{n: 'Manufatura', v: 14.5}, {n: 'Energia Verde', v: 4.5}, {n: 'Serviços', v: 81}]
+            },
+            {
+                country: 'Canadá', flag: '🇨🇦', gdp2025: 2.14, gdpBase: 2.9, gdpStrat: 2.9,
+                insight: 'Atua como o parceiro geopolítico de proximidade dos EUA, modernizando a sua fortíssima base de mineração para fornecer minerais críticos limpos.',
+                data2025: [{n: 'Manufatura', v: 10}, {n: 'Mineração', v: 7.3}, {n: 'Serviços', v: 82.7}],
+                dataBase: [{n: 'Manufatura', v: 9.5}, {n: 'Mineração', v: 8}, {n: 'Serviços', v: 82.5}],
+                dataStrat: [{n: 'Manufatura', v: 9.5}, {n: 'Mineração', v: 8}, {n: 'Serviços', v: 82.5}]
+            },
+            {
+                country: 'Brasil ★', flag: '🇧🇷', gdp2025: 2.08, gdpBase: 2.9, gdpStrat: 3.8, isHighlight: true,
+                insight: 'A grande viragem: o país capitaliza os recursos muito além da exportação bruta. A reindustrialização baseada em IA e energia verde projeta o país para 6ª força.',
+                data2025: [{n: 'Agropecuária', v: 8.9}, {n: 'Manufatura', v: 10}, {n: 'Mineração', v: 4.5}, {n: 'Serviços', v: 76.6}],
+                dataBase: [{n: 'Agropecuária', v: 8.5}, {n: 'Manufatura', v: 10}, {n: 'Mineração', v: 5.5}, {n: 'Serviços', v: 76}],
+                dataStrat: [{n: 'Agropecuária', v: 7.5}, {n: 'Manufatura', v: 11.5}, {n: 'Terras Raras', v: 4.5}, {n: 'Data Centers IA', v: 6.5}, {n: 'Energia Verde', v: 7.5}, {n: 'Tech/IA', v: 8.5}, {n: 'Serviços', v: 54}]
+            }
+        ];
+
+        globalChartData.forEach(country => {
+            ['data2025', 'dataBase', 'dataStrat'].forEach(dataSet => {
+                const hasServices = country[dataSet].find(s => s.n === 'Serviços');
+                if(!hasServices) {
+                    country[dataSet].push({n: 'Serviços', v: calcRest(country[dataSet])});
+                }
+            });
+        });
 
         const pillars = [
             {
@@ -174,7 +301,6 @@
             { level: '3ª Ordem', area: 'Sócio-Tecnológica', desc: 'Risco de Tecno-Colonialismo se investimentos não focarem em talentos. Energia limpa alimentando IPs estrangeiras.' }
         ];
 
-        // --- GESTÃO DE ESTADO (Vanilla JS) ---
         let state = {
             expandedId: pillars[0].id,
             activeTab: 'visao'
@@ -195,13 +321,42 @@
             renderApp();
         }
 
-        // --- FUNÇÃO DE RENDERIZAÇÃO (Substitui o React) ---
+        // Função de renderização das barras do Gráfico com tooltips atualizados
+        function renderChartBar(segments, totalGdp) {
+            return segments.map(seg => {
+                const colorClass = chartLegend[seg.n] || 'bg-gray-500';
+                const absoluteValue = ((seg.v / 100) * totalGdp).toFixed(2);
+                
+                return `
+                    <div class="h-full ${colorClass} chart-bar-segment relative tip-container flex items-center justify-center transition-all duration-200 cursor-pointer first:rounded-l-full last:rounded-r-full" style="width: ${seg.v}%">
+                        ${seg.v > 8 ? `<span class="text-[9px] md:text-[10px] font-bold text-white/90 truncate px-1 drop-shadow-md">${seg.v}%</span>` : ''}
+                        
+                        <!-- Tooltip CSS customizado -->
+                        <div class="tip-content flex flex-col items-center absolute bottom-full left-1/2 -translate-x-1/2 mb-2">
+                            <div class="bg-slate-800 border border-slate-600 text-white text-xs rounded-lg py-1.5 px-3 shadow-xl whitespace-nowrap">
+                                <span class="font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full ${colorClass} inline-block"></span> 
+                                    ${seg.n}
+                                </span>
+                                <div class="text-slate-300 mt-0.5">
+                                    <span class="font-bold text-slate-100">${seg.v}%</span> da economia
+                                </div>
+                                <div class="text-[10px] text-emerald-400 font-medium mt-0.5 border-t border-slate-700 pt-0.5">
+                                    US$ ${absoluteValue} Triliões
+                                </div>
+                            </div>
+                            <div class="w-2 h-2 bg-slate-800 border-b border-r border-slate-600 transform rotate-45 -mt-1"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function renderApp() {
             const appRoot = document.getElementById('app-root');
             
             let html = `
-                <!-- Header -->
-                <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-20 shadow-2xl">
+                <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-2xl">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="text-center md:text-left">
                             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight flex items-center justify-center md:justify-start gap-3">
@@ -227,29 +382,36 @@
                                 <h2 class="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Cenários Macroeconómicos</h2>
                             </div>
                             <p class="text-sm text-slate-400 leading-relaxed max-w-4xl">
-                                <strong class="text-slate-300">O que é isto?</strong> Os cenários são mapas estratégicos que contrastam a inércia atual (o que acontece se o país não mudar a sua matriz de investimentos) com um futuro de protagonismo ativo. Esta secção projeta o impacto financeiro destas escolhas. <br/>
+                                <strong class="text-slate-300">O que é isto?</strong> Os cenários são mapas estratégicos que contrastam a inércia atual com um futuro de protagonismo ativo. <br/>
                                 <span class="text-xs text-slate-500 mt-2 flex items-center gap-1"><i data-lucide="book-open" class="w-3 h-3"></i> Fontes base: Projeções macroeconómicas do FMI (WEO), Goldman Sachs e McKinsey.</span>
                             </p>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <!-- Baseline -->
-                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden group">
-                                <div class="absolute top-0 right-0 p-4 opacity-10">
-                                    <i data-lucide="trending-up" class="w-20 h-20"></i>
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 relative group">
+                                <!-- Wrapper do background para não cortar o tooltip -->
+                                <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                                        <i data-lucide="trending-up" class="w-20 h-20"></i>
+                                    </div>
                                 </div>
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Cenário Inercial</p>
-                                <h3 class="text-lg md:text-xl font-bold text-slate-300 mb-1">Baseline 2035</h3>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 relative z-10">Cenário Inercial</p>
+                                <h3 class="text-lg md:text-xl font-bold text-slate-300 mb-1 relative z-10">Baseline 2035</h3>
                                 <p class="text-[10px] text-slate-500 mb-4 relative z-10 leading-tight pr-4">A projeção caso o país mantenha o ritmo atual, sem grandes estímulos ou mudanças estruturais nas cadeias de valor.</p>
                                 <div class="space-y-3 relative z-10">
                                     <div class="flex flex-col border-b border-slate-800 pb-2">
                                         <span class="text-slate-400 text-xs uppercase font-bold mb-1">PIB Projetado</span>
                                         <span class="text-2xl font-bold text-white">${scenarioData.baseline.gdp}</span>
                                     </div>
-                                    <div class="flex justify-between items-end pb-1 relative group/tip">
-                                        <span class="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help">Crescimento (CAGR)</span>
-                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block bg-slate-800 border border-slate-700 text-xs text-slate-300 p-2 rounded shadow-xl w-48 z-20">
-                                            <strong>CAGR:</strong> Taxa de Crescimento Anual Composta. Representa a média constante de crescimento ano a ano.
+                                    
+                                    <div class="flex justify-between items-end pb-1 relative tip-container">
+                                        <span class="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help flex items-center gap-1.5 hover:text-slate-300 transition-colors">
+                                            Crescimento (CAGR) <i data-lucide="info" class="w-3.5 h-3.5 text-slate-500"></i>
+                                        </span>
+                                        <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-56">
+                                            <strong class="text-white block mb-1">Taxa de Crescimento Anual Composta</strong> 
+                                            Representa a média constante de crescimento económico ano após ano para atingir o valor final.
                                         </div>
                                         <span class="text-md font-semibold text-slate-300">${scenarioData.baseline.cagr}</span>
                                     </div>
@@ -257,8 +419,10 @@
                             </div>
 
                             <!-- Strategic -->
-                            <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.05)]">
-                                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -z-0"></div>
+                            <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-5 md:p-6 relative group shadow-[0_0_20px_rgba(16,185,129,0.05)]">
+                                <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full"></div>
+                                </div>
                                 <p class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2 relative z-10 flex items-center gap-2">
                                     <i data-lucide="zap" class="w-3.5 h-3.5"></i> Cenário Desejável
                                 </p>
@@ -269,10 +433,13 @@
                                         <span class="text-slate-400 text-xs uppercase font-bold mb-1">PIB Projetado</span>
                                         <span class="text-3xl font-black text-emerald-400">${scenarioData.strategic.gdp}</span>
                                     </div>
-                                    <div class="flex justify-between items-end pb-1 relative group/tip">
-                                        <span class="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help">Posição Global</span>
-                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover/tip:block bg-slate-800 border border-slate-700 text-xs text-slate-300 p-2 rounded shadow-xl w-52 z-20">
-                                            Comparativo projetado do ranking de PIB nominal (em dólares) em relação às demais potências mundiais.
+                                    <div class="flex justify-between items-end pb-1 relative tip-container">
+                                        <span class="text-slate-400 text-sm border-b border-dashed border-slate-600 cursor-help flex items-center gap-1.5 hover:text-slate-300 transition-colors">
+                                            Posição Global <i data-lucide="info" class="w-3.5 h-3.5 text-slate-500"></i>
+                                        </span>
+                                        <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-60">
+                                            <strong class="text-white block mb-1">Ranking das Maiores Economias</strong>
+                                            Comparativo projetado do PIB nominal (em dólares) superando países como Itália, Canadá e França.
                                         </div>
                                         <span class="text-md font-bold text-white">${scenarioData.strategic.rank}</span>
                                     </div>
@@ -280,11 +447,14 @@
                             </div>
 
                             <!-- Accelerator -->
-                            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 md:p-6 flex flex-col justify-center items-center text-center relative group/tip">
+                            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 md:p-6 flex flex-col justify-center items-center text-center relative tip-container">
                                 <i data-lucide="lightbulb" class="text-indigo-400 mb-2 w-7 h-7"></i>
-                                <h3 class="text-sm md:text-base font-bold text-slate-300 mb-1 border-b border-dashed border-indigo-500/50 cursor-help">Acelerador Necessário</h3>
-                                <div class="absolute top-2 hidden group-hover/tip:block bg-indigo-950 border border-indigo-500/50 text-xs text-slate-300 p-2 rounded shadow-xl w-11/12 z-20">
-                                    Capital total estimado para viabilizar a transição e a diferença entre os cenários.
+                                <h3 class="text-sm md:text-base font-bold text-slate-300 mb-1 border-b border-dashed border-indigo-500/50 cursor-help flex items-center gap-1.5 hover:text-white transition-colors">
+                                    Acelerador Necessário <i data-lucide="info" class="w-4 h-4 text-indigo-400"></i>
+                                </h3>
+                                <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-indigo-950 border border-indigo-500/50 text-xs text-slate-200 p-3 rounded-lg shadow-2xl w-64">
+                                    <strong class="text-indigo-300 block mb-1">O Custo da Transformação</strong>
+                                    Capital de investimento total exigido pelo mercado para fechar o gap (diferença) estrutural e viabilizar o cenário estratégico.
                                 </div>
                                 <span class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 mb-2 mt-1">
                                     ${scenarioData.investment}
@@ -296,7 +466,100 @@
                         </div>
                     </section>
 
-                    <!-- Seção 2: Vetores e Acordeão de Insights -->
+                    <!-- GRÁFICO COMPARATIVO GLOBAL -->
+                    <section class="bg-slate-900/40 border border-slate-800 rounded-3xl p-5 md:p-8">
+                        <div class="flex flex-col mb-8 text-center md:text-left">
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-white mb-2">Composição do PIB Global — A Grande Reestruturação</h2>
+                            <p class="text-sm text-slate-400 max-w-4xl mx-auto md:mx-0">
+                                O que acontece ao PIB brasileiro em comparação com as potências mundiais se o país ativar os vetores estratégicos? Os novos blocos de valor (<span class="text-emerald-400 font-medium">Energia Verde</span>, <span class="text-orange-400 font-medium">Tech/IA</span>, <span class="text-teal-400 font-medium">Data Centers</span> e <span class="text-rose-400 font-medium">Terras Raras</span>) redesenham a economia no Cenário Estratégico 2035.
+                            </p>
+                            <span class="text-xs text-slate-400 mt-3 bg-slate-900/80 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg w-fit border border-slate-700 mx-auto md:mx-0 shadow-sm">
+                                <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-blue-400"></i> Passe o mouse sobre os países e as barras para ver análises interativas
+                            </span>
+                        </div>
+
+                        <!-- Legenda Dinâmica -->
+                        <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 md:gap-5 mb-8 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
+                            ${Object.entries(chartLegend).map(([name, colorClass]) => `
+                                <div class="flex items-center gap-1.5">
+                                    <div class="w-3 h-3 rounded-sm ${colorClass}"></div>
+                                    <span class="text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider">${name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <!-- Gráfico em Tabela/Grid -->
+                        <div class="flex flex-col gap-6">
+                            <!-- Cabeçalho (Só Visível em Desktop) -->
+                            <div class="hidden lg:grid grid-cols-[180px_1fr_1fr_1fr] gap-6 px-4 border-b border-slate-800 pb-3">
+                                <div></div>
+                                <div class="text-center text-xs font-bold text-slate-500 uppercase tracking-widest">2025<br/><span class="text-[10px] font-normal text-slate-600">Composição Atual</span></div>
+                                <div class="text-center text-xs font-bold text-blue-500 uppercase tracking-widest">2035 Baseline<br/><span class="text-[10px] font-normal text-blue-500/70">Inércia</span></div>
+                                <div class="text-center text-xs font-bold text-emerald-500 uppercase tracking-widest relative tip-container">
+                                    <span class="border-b border-dashed border-emerald-500/50 cursor-help inline-flex items-center gap-1">
+                                        2035 Estratégico ★ <i data-lucide="info" class="w-3 h-3 text-emerald-500/80"></i>
+                                    </span>
+                                    <div class="tip-content absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-800 border border-slate-600 text-[10px] text-slate-200 p-2 rounded shadow-xl w-48 font-normal normal-case">
+                                        Composição projetada assumindo a injeção dos US$500B e execução total das políticas de industrialização verde.
+                                    </div>
+                                    <br/><span class="text-[10px] font-normal text-emerald-500/70">Novos Motores</span>
+                                </div>
+                            </div>
+
+                            <!-- Linhas de Países -->
+                            ${globalChartData.map(country => `
+                                <div class="flex flex-col lg:grid lg:grid-cols-[180px_1fr_1fr_1fr] gap-4 lg:gap-6 items-center bg-slate-950 lg:bg-transparent p-4 lg:p-0 rounded-2xl border border-slate-800 lg:border-none ${country.isHighlight ? 'lg:bg-emerald-900/10 lg:p-4 lg:-mx-4 lg:border lg:border-emerald-500/30 lg:rounded-2xl lg:shadow-[0_0_30px_rgba(16,185,129,0.05)]' : ''} z-10 hover:z-20">
+                                    
+                                    <!-- Info do País -->
+                                    <div class="flex lg:flex-col items-center justify-between lg:justify-center lg:items-end w-full gap-2 border-b lg:border-b-0 border-slate-800 pb-3 lg:pb-0 pr-0 lg:pr-4">
+                                        <div class="flex items-center gap-2 relative tip-container">
+                                            <span class="text-xl">${country.flag}</span>
+                                            <span class="font-bold ${country.isHighlight ? 'text-emerald-400 text-lg' : 'text-slate-300'} border-b border-dashed border-slate-600 cursor-help transition-colors hover:text-white">${country.country}</span>
+                                            
+                                            <!-- Tooltip Interativo do País -->
+                                            <div class="tip-content absolute bottom-full lg:bottom-auto lg:top-full left-0 mt-2 mb-2 bg-slate-800 border border-slate-600 text-[11px] text-slate-300 p-3 rounded-xl shadow-2xl w-64 normal-case font-normal text-left">
+                                                <strong class="text-white block mb-1.5 flex items-center gap-1.5 border-b border-slate-700 pb-1.5">
+                                                    <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i> Macro-Cenário 2035
+                                                </strong>
+                                                ${country.insight}
+                                            </div>
+                                        </div>
+                                        <div class="flex lg:flex-col items-center lg:items-end gap-3 lg:gap-1 text-xs font-mono font-medium mt-1 lg:mt-0">
+                                            <span class="text-slate-500">2025: <span class="text-slate-300">$${country.gdp2025}T</span></span>
+                                            <span class="text-blue-500/80">Base: <span class="text-blue-400">$${country.gdpBase}T</span></span>
+                                            <span class="text-emerald-500/80">Est: <span class="${country.isHighlight ? 'text-emerald-400 font-bold' : 'text-emerald-400'}">$${country.gdpStrat}T</span></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Barras (overflow removido) -->
+                                    <div class="w-full flex flex-col gap-1">
+                                        <span class="lg:hidden text-[10px] text-slate-500 font-bold uppercase mb-1 text-center">2025 Atual</span>
+                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-slate-700/50 shadow-inner">
+                                            ${renderChartBar(country.data2025, country.gdp2025)}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="w-full flex flex-col gap-1">
+                                        <span class="lg:hidden text-[10px] text-blue-500 font-bold uppercase mt-3 mb-1 text-center">2035 Baseline</span>
+                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border border-blue-900/50 shadow-inner">
+                                            ${renderChartBar(country.dataBase, country.gdpBase)}
+                                        </div>
+                                    </div>
+
+                                    <div class="w-full flex flex-col gap-1 relative">
+                                        <span class="lg:hidden text-[10px] text-emerald-500 font-bold uppercase mt-3 mb-1 text-center">2035 Estratégico</span>
+                                        ${country.isHighlight ? '<div class="absolute -inset-1 bg-emerald-500/20 blur-md rounded-full -z-10 hidden lg:block"></div>' : ''}
+                                        <div class="w-full h-5 md:h-7 bg-slate-800 rounded-full flex border ${country.isHighlight ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-slate-700/50'} shadow-inner z-10">
+                                            ${renderChartBar(country.dataStrat, country.gdpStrat)}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+
+                    <!-- Seção 3: Vetores e Acordeão de Insights -->
                     <section>
                         <div class="flex flex-col mb-6 space-y-3">
                             <div class="flex items-center gap-2">
@@ -312,7 +575,7 @@
                                 <div class="bg-blue-500/20 p-1.5 rounded-md">
                                     <i data-lucide="chevron-down" class="text-blue-400 animate-bounce w-4 h-4"></i>
                                 </div>
-                                <span class="text-xs md:text-sm font-medium text-slate-300"><strong>Guia Interativo:</strong> Toque nos cartões abaixo para expandir e explorar os dados profundos e a leitura estratégica de cada vetor.</span>
+                                <span class="text-xs md:text-sm font-medium text-slate-300"><strong>Guia Interativo:</strong> Toque nos cartões abaixo e <span class="border-b border-dashed border-slate-400 px-1">explore os ícones de informação (<i data-lucide="info" class="w-3 h-3 inline"></i>)</span> para ler as legendas explicativas.</span>
                             </div>
                         </div>
 
@@ -320,19 +583,31 @@
                             ${pillars.map(pillar => {
                                 const isExpanded = state.expandedId === pillar.id;
                                 
-                                // Renderizar o conteúdo interior dependendo da aba ativa
                                 let tabContent = '';
                                 if (state.activeTab === 'visao') {
                                     tabContent = `
                                         <div class="flex flex-col gap-5">
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/50">
-                                                    <span class="block text-[10px] text-slate-500 font-bold uppercase mb-1">O Sinal Hoje</span>
-                                                    <p class="text-slate-300 text-sm font-medium">${pillar.current}</p>
+                                                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/50 relative tip-container">
+                                                    <span class="text-[10px] text-slate-500 font-bold uppercase mb-1 border-b border-dashed border-slate-700 cursor-help flex items-center gap-1 w-fit">
+                                                        O Sinal Hoje <i data-lucide="info" class="w-3 h-3"></i>
+                                                    </span>
+                                                    <!-- Legenda Tooltip -->
+                                                    <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52">
+                                                        Indicador atual ou métrica-base (Baseline) que comprova a existência de um potencial latente neste setor no Brasil.
+                                                    </div>
+                                                    <p class="text-slate-300 text-sm font-medium mt-1">${pillar.current}</p>
                                                 </div>
-                                                <div class="${pillar.bgLight} p-4 rounded-xl border ${pillar.borderLight}">
-                                                    <span class="block text-[10px] ${pillar.textLight} font-bold uppercase mb-1">Projeção 2035</span>
-                                                    <p class="text-white text-sm font-bold leading-tight">${pillar.projection}</p>
+
+                                                <div class="${pillar.bgLight} p-4 rounded-xl border ${pillar.borderLight} relative tip-container">
+                                                    <span class="text-[10px] ${pillar.textLight} font-bold uppercase mb-1 border-b border-dashed border-${pillar.color}-700/50 cursor-help flex items-center gap-1 w-fit">
+                                                        Projeção 2035 <i data-lucide="info" class="w-3 h-3"></i>
+                                                    </span>
+                                                    <!-- Legenda Tooltip -->
+                                                    <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-56">
+                                                        O estado futuro e quantificado almejado pelo Cenário Estratégico, projetando a captura total de valor.
+                                                    </div>
+                                                    <p class="text-white text-sm font-bold leading-tight mt-1">${pillar.projection}</p>
                                                 </div>
                                             </div>
 
@@ -354,9 +629,15 @@
                                                 <div class="bg-rose-500/10 p-2.5 rounded-full w-fit shrink-0">
                                                     <i data-lucide="shield-alert" class="text-rose-400 w-5 h-5"></i>
                                                 </div>
-                                                <div>
-                                                    <h4 class="text-rose-400 font-bold uppercase text-xs tracking-wider mb-1">Risco Crítico</h4>
-                                                    <p class="text-slate-300 text-sm leading-relaxed font-medium">
+                                                <div class="relative tip-container w-full">
+                                                    <h4 class="text-rose-400 font-bold uppercase text-xs tracking-wider mb-1 border-b border-dashed border-rose-800 cursor-help flex items-center gap-1 w-fit">
+                                                        Risco Crítico <i data-lucide="info" class="w-3 h-3 text-rose-500"></i>
+                                                    </h4>
+                                                    <!-- Legenda Tooltip -->
+                                                    <div class="tip-content absolute bottom-full left-0 md:left-auto md:right-0 mb-2 bg-slate-800 border border-rose-900 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-64">
+                                                        O que pode correr mal? O principal estrangulamento de mercado ou político que pode impedir a concretização desta projeção.
+                                                    </div>
+                                                    <p class="text-slate-300 text-sm leading-relaxed font-medium mt-1">
                                                         ${pillar.risk}
                                                     </p>
                                                 </div>
@@ -366,10 +647,14 @@
                                 } else {
                                     tabContent = `
                                         <div class="flex flex-col gap-6">
-                                            <div class="bg-slate-950 p-4 md:p-5 rounded-xl border border-slate-800/50">
-                                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> Leitura de Cenário
+                                            <div class="bg-slate-950 p-4 md:p-5 rounded-xl border border-slate-800/50 relative tip-container">
+                                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 border-b border-dashed border-slate-600 cursor-help flex items-center gap-2 w-fit">
+                                                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> Leitura de Cenário <i data-lucide="info" class="w-3 h-3"></i>
                                                 </h4>
+                                                <!-- Legenda Tooltip -->
+                                                <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-64">
+                                                    Interpretação e síntese qualitativa feita por especialistas em Foresight sobre os dados brutos.
+                                                </div>
                                                 <p class="text-slate-300 leading-relaxed text-sm">
                                                     ${pillar.analysis}
                                                 </p>
@@ -407,9 +692,9 @@
                                 }
 
                                 return `
-                                    <div class="flex flex-col bg-slate-900 rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded ? pillar.borderSolid + ' shadow-[0_4px_30px_rgba(0,0,0,0.3)]' : 'border-slate-800 hover:border-slate-700'}">
+                                    <div class="flex flex-col bg-slate-900 rounded-2xl border transition-all duration-300 ${isExpanded ? pillar.borderSolid + ' shadow-[0_4px_30px_rgba(0,0,0,0.3)] z-10' : 'border-slate-800 hover:border-slate-700'}">
                                         <button onclick="toggleExpand('${pillar.id}')" class="w-full text-left p-5 md:p-6 flex flex-col group focus:outline-none relative cursor-pointer">
-                                            ${isExpanded ? `<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${pillar.gradient}"></div>` : ''}
+                                            ${isExpanded ? `<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${pillar.gradient} rounded-t-2xl"></div>` : ''}
                                             
                                             <div class="flex items-center justify-between w-full">
                                                 <div class="flex flex-col md:flex-row md:items-center gap-4 w-full">
@@ -419,8 +704,15 @@
                                                     
                                                     <div class="flex-1">
                                                         <h3 class="text-lg md:text-xl font-bold text-white mb-1 leading-tight">${pillar.title}</h3>
-                                                        <div class="flex items-center gap-2 mt-1 md:mt-0">
-                                                            <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Impacto PIB 2035:</span>
+                                                        <div class="flex items-center gap-2 mt-1 md:mt-0 relative tip-container">
+                                                            <span class="text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-dashed border-slate-600 cursor-help flex items-center gap-1 hover:text-slate-300 transition-colors">
+                                                                Impacto PIB 2035 <i data-lucide="info" class="w-3 h-3 text-slate-400"></i>
+                                                            </span>
+                                                            <!-- Tooltip Legenda PIB -->
+                                                            <div class="tip-content absolute top-full left-0 mt-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-56 normal-case font-normal">
+                                                                <strong class="text-white block mb-1">Percentagem da Riqueza Nacional</strong>
+                                                                Projeção da contribuição estimada (share) deste setor específico para o PIB do Brasil até 2035.
+                                                            </div>
                                                             <span class="text-sm font-black ${isExpanded ? pillar.textLight : 'text-slate-300'}">${pillar.gdpShare}</span>
                                                         </div>
                                                     </div>
@@ -436,7 +728,7 @@
                                         </button>
 
                                         ${isExpanded ? `
-                                            <div class="border-t border-slate-800 bg-slate-950/40 slide-in flex flex-col">
+                                            <div class="border-t border-slate-800 bg-slate-950/40 slide-in flex flex-col rounded-b-2xl">
                                                 <div class="p-4 bg-slate-900/50 border-b border-slate-800">
                                                     <p class="text-sm text-slate-300 leading-relaxed italic border-l-2 pl-3 border-slate-700">
                                                         ${pillar.intro}
@@ -463,7 +755,7 @@
                         </div>
                     </section>
 
-                    <!-- Seção 3: Roda das Implicações -->
+                    <!-- Seção 4: Roda das Implicações -->
                     <section>
                         <div class="flex flex-col mb-6 space-y-3">
                             <div class="flex items-center gap-2">
@@ -471,7 +763,7 @@
                                 <h2 class="text-xl md:text-2xl font-bold text-white uppercase tracking-wider">Roda das Implicações</h2>
                             </div>
                             <p class="text-sm text-slate-400 leading-relaxed max-w-4xl">
-                                <strong class="text-slate-300">O que é isto?</strong> Utilizando o framework de design de futuros conhecido como <i>Futures Wheel</i>, este bloco mapeia o efeito dominó das mudanças sistémicas. Analisamos o que acontece a reboque do Cenário Estratégico, dividindo os impactos em consequências primárias (1ª ordem), secundárias (2ª ordem) e consequências estruturais que geram novos riscos (3ª ordem).<br/>
+                                <strong class="text-slate-300">O que é isto?</strong> Utilizando o framework de design de futuros conhecido como <i>Futures Wheel</i>, este bloco mapeia o efeito dominó das mudanças sistémicas. Analisamos o que acontece a reboque do Cenário Estratégico, dividindo os impactos em consequências primárias, secundárias e terciárias.<br/>
                                 <span class="text-xs text-slate-500 mt-2 flex items-center gap-1"><i data-lucide="book-open" class="w-3 h-3"></i> Fontes base: Exercício de Foresight Estratégico e cruzamento de tendências sociopolíticas.</span>
                             </p>
                         </div>
@@ -482,7 +774,15 @@
                                     <div class="absolute -top-3 -left-3 w-8 h-8 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center font-bold text-slate-400 text-xs md:text-sm">
                                         ${idx + 1}
                                     </div>
-                                    <span class="text-[10px] md:text-xs font-bold text-emerald-500 uppercase tracking-widest">${imp.level}</span>
+                                    <div class="relative tip-container inline-block mb-1 w-fit">
+                                        <span class="text-[10px] md:text-xs font-bold text-emerald-500 uppercase tracking-widest border-b border-dashed border-emerald-800/50 cursor-help flex items-center gap-1 hover:text-emerald-400 transition-colors">
+                                            ${imp.level} <i data-lucide="info" class="w-3 h-3 text-emerald-600"></i>
+                                        </span>
+                                        <!-- Legenda Tooltip da Ordem -->
+                                        <div class="tip-content absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-600 text-xs text-slate-200 p-2.5 rounded-lg shadow-xl w-52 normal-case font-normal">
+                                            ${imp.level === '1ª Ordem' ? '<strong class="text-white block mb-1">Impacto Imediato</strong>Consequência direta e primária da execução do cenário estratégico.' : imp.level === '2ª Ordem' ? '<strong class="text-white block mb-1">Impacto Secundário</strong>O efeito dominó gerado pelas consequências de 1ª ordem.' : '<strong class="text-white block mb-1">Impacto Estrutural</strong>A mudança profunda (sociológica ou risco sistémico) revelada a longo prazo.'}
+                                        </div>
+                                    </div>
                                     <h3 class="text-base md:text-lg font-bold text-white mt-1 mb-2">${imp.area}</h3>
                                     <p class="text-slate-400 text-xs md:text-sm leading-relaxed">
                                         ${imp.desc}
